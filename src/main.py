@@ -257,6 +257,35 @@ def main():
                 voted[cat] = [vi for vi in issues if vi.issue.title in passed_titles]
             logger.info("Post-verification complete")
 
+        # 跨category去重：精确行号匹配（不//5容差），避免XSS(40)+构造函数(44)等false merge
+        if voted:
+            from collections import defaultdict
+            cross_merged = {}  # {(file, line_start): VotedIssue}
+            sev_order = {"CRITICAL": 4, "HIGH": 3, "MEDIUM": 2, "LOW": 1}
+            merged_count = 0
+            for cat, issues in list(voted.items()):
+                for vi in issues:
+                    loc_key = (vi.issue.file, vi.issue.line_start)
+                    if loc_key in cross_merged:
+                        existing = cross_merged[loc_key]
+                        new_sev = sev_order.get(vi.issue.severity.value.upper(), 0)
+                        old_sev = sev_order.get(existing.issue.severity.value.upper(), 0)
+                        if new_sev > old_sev:
+                            cross_merged[loc_key] = vi
+                        # 合并投票数：取两个category中较高的
+                        cross_merged[loc_key].vote_count = max(
+                            cross_merged[loc_key].vote_count, vi.vote_count
+                        )
+                        merged_count += 1
+                    else:
+                        cross_merged[loc_key] = vi
+            if merged_count > 0:
+                logger.info(f"Cross-category dedup: merged {merged_count} duplicate issues")
+            # 按category重建
+            voted = dict(defaultdict(list))
+            for vi in cross_merged.values():
+                voted[vi.issue.category].append(vi)
+
         # 测试覆盖分析
         from .tools.diff_parser import analyze_test_coverage
         coverage = analyze_test_coverage(diff_text)

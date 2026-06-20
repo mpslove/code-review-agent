@@ -20,21 +20,45 @@ VERIFIER_PROMPT = """你是一个代码审查二审专家。初审agent找到了
 以下任一情况：
 1. **运行时错误**：空指针、KeyError、类型错误、未处理异常、race condition
 2. **安全漏洞**：注入、XSS、信息泄露、权限绕过
-3. **性能缺陷**：重复I/O、O(n²)循环、不必要的大对象分配、冗余计算——只要diff中能定位到具体代码行
+3. **性能缺陷**：重复I/O、O(n²)循环、不必要的大对象分配、冗余计算——**必须有diff中的具体代码行证据，不能是推测**
 4. **逻辑错误**：条件判断反了、边界条件错误、资源泄漏、死循环
 5. **不完整实现**：函数体为空、缺少return、异常被吞没处理
 
 ### 误报 (FP) → 回复 NO
-以下情况：
-1. **纯设计意见**：违反SOLID/DIP/SRP但没有具体bug后果、命名建议、抽象层过多的批评
-2. **风格偏好**：代码风格、代码组织方式、应该用X模式而不是Y模式（无bug）
-3. **推测性问题**：需要diff之外的大量上下文才能判断、假设了一个不太可能发生的场景
-4. **"紧耦合"、"职责混乱"等抽象批评**，除非伴随具体的错误链（如"A调用B的方式会导致X错误"）
+**自动NO（不需思考）**：
+1. **DRY/代码重复**：建议提取公共函数/类/helper — 一律NO，这是代码组织偏好
+2. **魔法数字/硬编码常量**：建议定义命名常量 — 一律NO，无bug后果
+3. **缺少类型注解**：建议添加type hints — 一律NO，不影响正确性
+4. **参数过多/函数签名复杂**：建议重构参数列表 — 一律NO，设计偏好
+5. **缺少docstring/注释**：建议补充文档 — 一律NO
+6. **asyncio Event/Condition.wait()无超时**：这是Python异步编程的标准行为 — NO
+7. **单层循环切片/拷贝声称O(n²)**：没有嵌套循环证据，是O(n) — NO
+8. **测试代码中的裸except/异常处理风格**：测试代码用裸except检测任意异常是常见模式 — NO
+9. **添加`__all__`限制星号导入**：这是Python标准实践，不是破坏兼容性的bug — NO
+10. **`exc_info=异常实例`参数类型声称不匹配**：传入异常实例会让logging内部调用sys.exc_info()，功能等效 — NO
+11. **`raise exc from None`异常链抑制**：Python 3显式语法，是有意识的设计选择 — NO
+12. **`raise e`替代裸`raise`**：Python 3中raise e保留__context__异常链，traceback差异不构成bug — NO
+13. **函数签名增加可选参数**：新参数有默认值(=None)，完全向后兼容，不是破坏性变更 — NO
+14. **函数名与实现不一致/互换**：这类声称需要两个函数的完整diff对比证据。如果diff只是代码移动/内联重构，不是bug — NO
+
+**重要：标题优先原则** — 如果issue的标题/核心主张命中上述任一类别，**即使描述很详细、看起来很有技术含量，也必须NO**。不要被描述中的技术细节误导。
+
+**需上下文判断**：
+6. **证据不成立**：如果issue声称"缺少X"但diff中明显有X — NO
+7. **推测性性能问题**：如"可能O(n²)"但没有benchmark或具体循环嵌套证据 — NO
+8. **纯设计意见**：违反SOLID/DIP/SRP但没有具体bug后果 — NO
+9. **风格偏好**：应该用X模式而不是Y模式、exception chaining方式、type:ignore注释等 — NO
+10. **"紧耦合"、"职责混乱"等抽象批评**，除非伴随具体的错误链 — NO
+11. **测试辅助/模拟代码中的性能问题**：test mock/helper中的O(n²)不构成实际问题 — NO
+12. **内部重构导致的信息变化**：如异常参数修改但调用方在同一文件内已适配 — NO
 
 ## 关键原则
 - **有代码行证据 + 可验证后果** → YES
 - **只有抽象原则/模式批评，无具体错误链** → NO
-- **性能问题必须给出具体场景**（如"循环内执行I/O"）才算TP，"可能影响性能"不算
+- **DRY/魔法数字/类型注解/docstring → 一律NO**
+- **测试代码异常处理/test mock性能 → 一律NO**
+- **证据与diff矛盾（声称缺X但diff有X）→ NO**
+- **设计选择（__all__、exc_info、from None）→ NO**
 
 对每条issue回复 YES（真bug）或 NO（误报）+ 一句话理由。
 
@@ -65,9 +89,9 @@ def verify_issues(issues: List[Dict], diff_text: str, max_issues: int = 15) -> L
     if not issues:
         return []
     
-    # 只验证HIGH和CRITICAL
-    to_verify = [i for i in issues if i.get("severity", "").upper() in ("HIGH", "CRITICAL")]
-    rest = [i for i in issues if i not in to_verify]
+    # 验证所有severity（之前只验证HIGH/CRITICAL导致MEDIUM DRY问题漏过）
+    to_verify = issues[:]  # 全部验证
+    rest = []
     
     if not to_verify:
         return issues

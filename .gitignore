@@ -3,30 +3,41 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 dist/
-build/
-.eggs/
+.build/
 
 # Environment
 .env
-*.env.local
+.env.key
+*.env
+
+# Temp scripts
+_check_nvidia.sh
+_debug_nc.sh
+_run_v7_test.sh
+_test_v*.sh
+run_v*.sh
+run_v*_*.py
+_sample.py
+_*.py
+check_*.py
+parse_v*.py
+sample_v*.py
+recall_benchmark.py
+recall_compute*.py
 
 # IDE
 .vscode/
 .idea/
 
-# Benchmark outputs (large)
-tests/benchmark/v4_*/
-tests/benchmark/v5_*/
-tests/benchmark/*/*.md
-!tests/benchmark/v4_ab20/*.md
-
-# Test cache
-.pytest_cache/
-.coverage
-
-# RAG index
-*.chroma/
+# Benchmark artifacts (keep only latest)
+tests/benchmark/v4*/
+tests/benchmark/v5*/
+tests/benchmark/v6*/
+tests/benchmark/v7*/
 
 # OS
 .DS_Store
 Thumbs.db
+
+# Git
+*.orig

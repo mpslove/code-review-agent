@@ -1,0 +1,137 @@
+[
+  {
+    "pr": "psf_requests_7272",
+    "severity": "MEDIUM",
+    "file": "src/requests/_types.py",
+    "line": 55,
+    "title": "运行时空操作的断言函数与多个模块耦合",
+    "desc": "在 `_types.py` 中定义了 `is_prepared` 函数（第55行），运行时始终返回 `True`，仅在类型检查时通过 `TypeIs` 进行窄化。该函数被 `adapters.py`、`cookies.py`、`sessions.py` 等多个模块导入并使用 `assert` 调用（如 `adapters.py` 第375行 `assert _is_prepared(req)`、`",
+    "votes": "1/2"
+  },
+  {
+    "pr": "aio-libs_aiohttp_159",
+    "severity": "HIGH",
+    "file": "aiohttp/web/application.py",
+    "line": 26,
+    "title": "RequestHandler中缺少统一错误处理，引发的不一致异常传播",
+    "desc": "RequestHandler.handle_request方法直接调用self._app.router.resolve(request)，该方法在路由失败时抛出HttpErrorException，但此处没有try-except捕获。异常会原样传播到上层服务器协议，而上层可能没有统一的错误处理逻辑，导致连接中断或错误响应不一致。此外，handler返回None时，从弱引用中获取response的逻",
+    "votes": "1/2"
+  },
+  {
+    "pr": "aio-libs_aiohttp_159",
+    "severity": "HIGH",
+    "file": "aiohttp/web/request.py",
+    "line": 272,
+    "title": "Request.release 中存在潜在无限循环，导致资源泄漏",
+    "desc": "在 release 方法中，while 循环条件 `while chunk is not EOF_MARKER or chunk:` 存在逻辑错误。当 chunk 恰好为 EOF_MARKER 且该对象在布尔上下文中为假（例如空字节串或特殊哨兵）时，`chunk is not EOF_MARKER` 为 False，而 `chunk` 为 False，导致循环提前退出。更严重的是，当 chunk",
+    "votes": "1/2"
+  },
+  {
+    "pr": "redis_redis-py_1040",
+    "severity": "MEDIUM",
+    "file": "redis/client.py",
+    "line": 1800,
+    "title": "xread 与 xreadgroup 存在重复的参数验证逻辑",
+    "desc": "`xread` 和 `xreadgroup` 都包含对 `count`、`block` 参数的类型检查和错误消息构建，且构建 `STREAMS` 部分的逻辑完全一致。\\nDiff 证据：\\n```python\\nif count is not None:\\n    if not isinstance(count, (int, long)) or count < 1:\\n        raise",
+    "votes": "1/2"
+  },
+  {
+    "pr": "aio-libs_aiohttp_159",
+    "severity": "HIGH",
+    "file": "examples/web_srv.py",
+    "line": 19,
+    "title": "StreamResponse not finalized: missing write_eof() call",
+    "desc": "In function `intro` (line 19): `resp.write(binary)`. Although `write` triggers `send_headers`, without a subsequent `write_eof()` the response is never completed, causing indefinite client waiting.",
+    "votes": "1/2"
+  },
+  {
+    "pr": "aio-libs_aiohttp_159",
+    "severity": "CRITICAL",
+    "file": "aiohttp/web/request.py",
+    "line": 288,
+    "title": "Incorrect loop condition in release() causes infinite loop",
+    "desc": "Line 288: `while chunk is not EOF_MARKER or chunk:`. The `or chunk` clause prevents the loop from terminating when `chunk` equals `EOF_MARKER` (because `EOF_MARKER` is truthy). This causes an infinite",
+    "votes": "1/2"
+  },
+  {
+    "pr": "aio-libs_aiohttp_159",
+    "severity": "CRITICAL",
+    "file": "aiohttp/web/__init__.py",
+    "line": 4,
+    "title": "变量引用错误：__all__ 使用了未导入的模块名",
+    "desc": "第4行 `__all__ = application.__all__ + request.__all__` 中 `application` 和 `request` 未被导入，因为 `from .application import *` 和 `from .request import *` 并不会将模块本身导入命名空间。这会导致 `NameError`，无法正常导入 `aiohttp.web`。\\",
+    "votes": "2/2"
+  },
+  {
+    "pr": "aio-libs_aiohttp_159",
+    "severity": "HIGH",
+    "file": "aiohttp/web/application.py",
+    "line": 38,
+    "title": "Application缺少host属性，但Request和示例代码直接引用",
+    "desc": "Application类未定义host属性，但在Request.__init__中使用了self._host（实际是app.host），且examples/web_srv.py中调用Application('localhost:8080', loop=loop)并打印app.host。由于__init__参数均为keyword-only且没有host参数，导致运行时AttributeError。具",
+    "votes": "1/2"
+  },
+  {
+    "pr": "scikit-learn_scikit-learn_92",
+    "severity": "CRITICAL",
+    "file": "scikits/learn/datasets/lfw.py",
+    "line": 245,
+    "title": "破坏性API变更：Bunch对象属性名class_names改为target_names",
+    "desc": "此次变更将`lfw_people`和`lfw_pairs`的Bunch对象属性从`class_names`重命名为`target_names`（diff证据：\\n```\\n-    return Bunch(data=faces, target=target, class_names=class_names,\\n+    return Bunch(data=faces, target=target",
+    "votes": "2/2"
+  },
+  {
+    "pr": "aio-libs_aiohttp_159",
+    "severity": "CRITICAL",
+    "file": "aiohttp/web/urldispatch.py",
+    "line": 33,
+    "title": "路由解析逻辑错误导致方法不匹配时可能匹配错误的路径",
+    "desc": "UrlDispatch.resolve方法中，当路径匹配但方法不匹配时，仅记录allowed_methods并继续循环，而不是立即抛出405错误。这会导致后续路径条目被错误匹配，破坏路由的唯一性语义。例如，路径'/hello'仅支持POST，但另一个条目'/hello/{name}'支持GET，当对'/hello'发起GET请求时，可能错误地匹配到'/hello/{name}'，而不是返回405。",
+    "votes": "1/2"
+  },
+  {
+    "pr": "redis_redis-py_1040",
+    "severity": "MEDIUM",
+    "file": "redis/client.py",
+    "line": 244,
+    "title": "parse_recursive_dict 中使用 pop(0) 导致 O(n²) 性能问题",
+    "desc": "在 Redis Streams 的响应解析函数 parse_recursive_dict 中，通过 while response: k = response.pop(0); v = response.pop(0) 的方式迭代键值对。pop(0) 的时间复杂度为 O(n)，因为每次移除第一个元素都会导致后续所有元素前移。如果 response 列表很大（例如数千个键值对），整体复杂度将达到 O(n²",
+    "votes": "1/2"
+  },
+  {
+    "pr": "redis_redis-py_1040",
+    "severity": "MEDIUM",
+    "file": "redis/client.py",
+    "line": 1990,
+    "title": "`xclaim` 函数参数过多（10个）",
+    "desc": "`xclaim` 函数有10个参数：`name, groupname, consumername, min_idle_time, message_ids, idle, time, retrycount, force, justid`。超过5个参数会严重影响调用可读性和测试复杂度。\\n证据：第1990行函数定义参数列表。",
+    "votes": "1/2"
+  },
+  {
+    "pr": "encode_uvicorn_65",
+    "severity": "HIGH",
+    "file": "uvicorn/protocols/http.py",
+    "line": 214,
+    "title": "协议栈切换后未清理HTTP协议对象状态",
+    "desc": "在data_received方法中（第214行）直接调用websocket_upgrade(self)后，transport的protocol被替换为WebSocketProtocol，但HttpProtocol对象（self）仍然存活且持有transport引用。后续HTTP连接关闭时可能触发HttpProtocol的eof_received或connection_lost，而此时protoco",
+    "votes": "1/2"
+  },
+  {
+    "pr": "aio-libs_aiohttp_159",
+    "severity": "HIGH",
+    "file": "aiohttp/web/application.py",
+    "line": 63,
+    "title": "Application类继承dict且构造函数使用位置参数导致API不兼容",
+    "desc": "Application类继承自dict，但其__init__只接受关键字参数（*， loop=None， router=None， **kwargs）。然而在examples/web_srv.py中调用Application('localhost:8080', loop=loop)将第一个位置参数传递给dict，而dict的__init__期望关键字参数，导致运行时错误。此类设计违反了接口一致性原",
+    "votes": "2/2"
+  },
+  {
+    "pr": "psf_black_25",
+    "severity": "MEDIUM",
+    "file": "black.py",
+    "line": 184,
+    "title": "异常处理边界不清晰：finally块在非正常路径下仍写入stdout",
+    "desc": "`format_stdin_to_stdout`函数中，finally块无条件执行`sys.stdout.write(contents)`。若在`format_file_contents`或`assert_equivalent`/`assert_stable`中抛出非`NothingChanged`异常（如`AssertionError`），finally仍会写入原始stdin内容，导致异常输出污",
+    "votes": "1/2"
+  }
+]
