@@ -1,0 +1,662 @@
+{
+  "aiohttp_159": {
+    "total_comments": 21,
+    "substantive": 20,
+    "samples": [
+      {
+        "user": "kxepal",
+        "body": "This property returns nothing. As planned?",
+        "path": "aiohttp/web/request.py",
+        "line": 143
+      },
+      {
+        "user": "kxepal",
+        "body": "Looks a bit inconsistent: you explicitly defines POST method, but implicitly GET one. Docs and suggestions will get confused.",
+        "path": "aiohttp/web/request.py",
+        "line": 246
+      },
+      {
+        "user": "kxepal",
+        "body": "OPTIONS is missed. It actually rarely need until you face the CORs thing, but it's quite often happens if you build some web service.",
+        "path": "aiohttp/web/urldispatch.py",
+        "line": 18
+      },
+      {
+        "user": "kxepal",
+        "body": "Cookies protocol is a bit weird. May be extract it into separate dict-like class with some more nice API?",
+        "path": "aiohttp/web/request.py",
+        "line": 52
+      },
+      {
+        "user": "kxepal",
+        "body": "Double decode happens there: first for `value = value.decode('utf-8')` second for `decode` lambda in case if charset isn't `utf-8`.",
+        "path": "aiohttp/web/request.py",
+        "line": 376
+      }
+    ]
+  },
+  "aiohttp_98": {
+    "total_comments": 6,
+    "substantive": 6,
+    "samples": [
+      {
+        "user": "asvetlov",
+        "body": "1. Please try to use encoding from _Content-Type_ _charset_ if specified.\n2. Please support _encoding_ keyword-only method argument for overriding json encoding.",
+        "path": "aiohttp/client.py",
+        "line": null
+      },
+      {
+        "user": "kxepal",
+        "body": "Good points!",
+        "path": "aiohttp/client.py",
+        "line": null
+      },
+      {
+        "user": "kxepal",
+        "body": "> Please support encoding keyword-only method argument for overriding json encoding.\n\nI'm afraid, this isn't actual any more:\nhttps://docs.python.org/3/library/json.html#json.loads\n\n> The other arguments have the same meaning as in load(), except encoding which is ignored and deprecated.",
+        "path": "aiohttp/client.py",
+        "line": null
+      },
+      {
+        "user": "asvetlov",
+        "body": "I mean \n\n```\n return json.loads(self._content.decode(encoding)) \n```\n\nnot \n\n```\nreturn json.loads(self._content.decode('utf-8'), encoding)\n```",
+        "path": "aiohttp/client.py",
+        "line": null
+      },
+      {
+        "user": "kxepal",
+        "body": "`encoding` passes as `response.json(encoding='utf-8')` and overrides defined in `Content-Type` header, correct?",
+        "path": "aiohttp/client.py",
+        "line": null
+      }
+    ]
+  },
+  "django_11414": {
+    "total_comments": 41,
+    "substantive": 41,
+    "samples": [
+      {
+        "user": "carltongibson",
+        "body": "I'm not sure the rename here is worth the churn.",
+        "path": "django/http/response.py",
+        "line": null
+      },
+      {
+        "user": "carltongibson",
+        "body": "If we're moving `encoding_map` it may as well go below the comment, where it's used. (And perhaps we don't need to temporary variable then?)",
+        "path": "django/http/response.py",
+        "line": null
+      },
+      {
+        "user": "carltongibson",
+        "body": "Can we use the `io.SEEK_END` constant here?",
+        "path": "django/http/response.py",
+        "line": null
+      },
+      {
+        "user": "carltongibson",
+        "body": "Can you combine these 2 tests using `subTest()`",
+        "path": "tests/responses/test_fileresponse.py",
+        "line": null
+      },
+      {
+        "user": "carltongibson",
+        "body": "Combine with `subTest()` \r\n\r\nIs it worth adding the _relative_ named versions?",
+        "path": "tests/responses/test_fileresponse.py",
+        "line": null
+      }
+    ]
+  },
+  "django_18542": {
+    "total_comments": 11,
+    "substantive": 10,
+    "samples": [
+      {
+        "user": "emicuencac",
+        "body": "```suggestion\r\n```",
+        "path": "tests/postgres_tests/test_trigram.py",
+        "line": null
+      },
+      {
+        "user": "emicuencac",
+        "body": "```suggestion\r\n        search_term = \"im matthew\"\r\n        self.assertSequenceEqual(\r\n            self.Model.objects.annotate(\r\n                concat_result=Concat(Value(\"I'm \"), F(\"field\")),\r\n```",
+        "path": "tests/postgres_tests/test_trigram.py",
+        "line": null
+      },
+      {
+        "user": "charettes",
+        "body": "```suggestion\r\n                concat_result=Concat(\r\n                    F(\"field\"), Value(\"tew\"), output_field=self.model._meta.get_field(\"field\"),\r\n```",
+        "path": "tests/postgres_tests/test_trigram.py",
+        "line": null
+      },
+      {
+        "user": "avilaton",
+        "body": "Does this add a `(...)::text` to the mix? it was missing that output_field that the bug happened but if the result of having output_field implies the existence of that cast, then the bug does not happen",
+        "path": "tests/postgres_tests/test_trigram.py",
+        "line": null
+      },
+      {
+        "user": "avilaton",
+        "body": "@charettes please advise there, not sure what would be the most accurate reproduction of the bug we think we found",
+        "path": "tests/postgres_tests/test_trigram.py",
+        "line": null
+      }
+    ]
+  },
+  "django_19840": {
+    "total_comments": 24,
+    "substantive": 21,
+    "samples": [
+      {
+        "user": "charettes",
+        "body": "These tests will pass even without your changes applied as these methods are always present they were just the wrong implementations. You could assert against their nature instead and the test doesn't need to be `async`\r\n\r\n```suggestion\r\n    def test_async_impl(self):\r\n        if cache.get_many is n",
+        "path": "tests/cache/tests.py",
+        "line": null
+      },
+      {
+        "user": "charettes",
+        "body": "should be named `aget_many` not `aget`",
+        "path": "django/core/cache/backends/db.py",
+        "line": null
+      },
+      {
+        "user": "charettes",
+        "body": "This should be defined on `BaseCache` and not `BaseDatabaseCache`. As pointed out in the ticket the memcached and redis backend are also affected.",
+        "path": "django/core/cache/backends/db.py",
+        "line": null
+      },
+      {
+        "user": "charettes",
+        "body": "This should not add anything if the subclass has its own specialized `aget_many`",
+        "path": "django/core/cache/backends/db.py",
+        "line": null
+      },
+      {
+        "user": "charettes",
+        "body": "Being an optimization / cleanup it doesn't qualify for a backport.",
+        "path": "docs/releases/5.2.7.txt",
+        "line": null
+      }
+    ]
+  },
+  "httpx_144": {
+    "total_comments": 4,
+    "substantive": 3,
+    "samples": [
+      {
+        "user": "sethmlarson",
+        "body": "Can we also get some tests with other components besides path? (ie `.join(\"?a=1\") -> \"https://example.org:123?a=1\"` and `.join(\"#fragment\") -> \"https://example.org:123#fragment\"`)\r\n\r\nWhat about a few `..` and `.` cases as well? (`.join(\"../../../../../abc\") -> \"https://example.org/abc\")\r\n\r\nAlso sinc",
+        "path": "tests/models/test_url.py",
+        "line": 44
+      },
+      {
+        "user": "StephenBrown2",
+        "body": "Taking verbatim the cases from the rfc and replacing `a` with `example.com`, the following tests pass with this PR:\r\n\r\n```python\r\nimport pytest\r\nfrom httpx.exceptions import InvalidURL\r\n\r\ndef test_url_join_rfc3986():\r\n    url = URL(\"http://example.com/b/c/d;p?q\")\r\n\r\n    with pytest.raises(InvalidURL",
+        "path": "tests/models/test_url.py",
+        "line": 44
+      },
+      {
+        "user": "lovelydinosaur",
+        "body": "That's amazing - thanks @StephenBrown2!\r\nPulled that in now.",
+        "path": "tests/models/test_url.py",
+        "line": 44
+      }
+    ]
+  },
+  "httpx_153": {
+    "total_comments": 23,
+    "substantive": 23,
+    "samples": [
+      {
+        "user": "yeraydiazdiaz",
+        "body": "I believe this be `self.backend.create_event`, is that right @florimondmanca?",
+        "path": "httpx/dispatch/http2.py",
+        "line": null
+      },
+      {
+        "user": "florimondmanca",
+        "body": "Correct! We should use methods on the backend instead of calling asyncio operations directly. :)",
+        "path": "httpx/dispatch/http2.py",
+        "line": null
+      },
+      {
+        "user": "sethmlarson",
+        "body": "Instead of the section here I think we can use `self.h2_state.acknowledge_received_data(event.flow_controlled_length, stream_id)`?\r\n\r\nWe don't need anything beyond the `h2_state.streams[stream_id].open`, it's all handled by `acknowledge_received_data()`.",
+        "path": "httpx/dispatch/http2.py",
+        "line": null
+      },
+      {
+        "user": "sethmlarson",
+        "body": "We should revert this change",
+        "path": "httpx/dispatch/http2.py",
+        "line": null
+      },
+      {
+        "user": "sethmlarson",
+        "body": "Is there any reason why we're doing `h2_state.max_outbound_frame_size - 1`?",
+        "path": "httpx/dispatch/http2.py",
+        "line": null
+      }
+    ]
+  },
+  "httpx_529": {
+    "total_comments": 6,
+    "substantive": 6,
+    "samples": [
+      {
+        "user": "StephenBrown2",
+        "body": "Why drop this plugin?",
+        "path": "test-requirements.txt",
+        "line": 9
+      },
+      {
+        "user": "lovelydinosaur",
+        "body": "It's unneccessarily causing breakages...\r\n\r\nEg. expressions such as...\r\n\r\n`self.content = b\"\".join([part async for part in self.stream()])`\r\n\r\nAre failing with \"C416 Unnecessary list comprehension - rewrite using list().\"",
+        "path": "test-requirements.txt",
+        "line": 9
+      },
+      {
+        "user": "florimondmanca",
+        "body": "Gotcha :)\r\n\r\n```suggestion\r\n```",
+        "path": "tests/client/test_redirects.py",
+        "line": null
+      },
+      {
+        "user": "StephenBrown2",
+        "body": "Can be resolved with `# noqa: C416`, as we want to keep the comprehension _there_, but perhaps not other places (non-async comprehensions).",
+        "path": "test-requirements.txt",
+        "line": 9
+      },
+      {
+        "user": "florimondmanca",
+        "body": "Related: https://github.com/adamchainz/flake8-comprehensions/issues/196",
+        "path": "test-requirements.txt",
+        "line": 9
+      }
+    ]
+  },
+  "starlette_60": {
+    "total_comments": 36,
+    "substantive": 32,
+    "samples": [
+      {
+        "user": "lovelydinosaur",
+        "body": "Should this just be `-> typing.AsyncGenerator[bytes]` ?",
+        "path": "starlette/requests.py",
+        "line": null
+      },
+      {
+        "user": "lovelydinosaur",
+        "body": "I think we should probably drop `JSONType` and just use `Any`.\r\n(Since the type system can't deal with the recursive type definition anyways)",
+        "path": "starlette/requests.py",
+        "line": null
+      },
+      {
+        "user": "lovelydinosaur",
+        "body": "Should we drop `\"type: ignore\" here?",
+        "path": "starlette/datastructures.py",
+        "line": null
+      },
+      {
+        "user": "lovelydinosaur",
+        "body": "Just `other: typing.Any` here is fine.",
+        "path": "starlette/datastructures.py",
+        "line": null
+      },
+      {
+        "user": "lovelydinosaur",
+        "body": "Is this needed?",
+        "path": "starlette/datastructures.py",
+        "line": null
+      }
+    ]
+  },
+  "uvicorn_232": {
+    "total_comments": 3,
+    "substantive": 3,
+    "samples": [
+      {
+        "user": "lovelydinosaur",
+        "body": "I think there’s some adjustements needed in this block - eg `raise` May need to be `raise exc from None`. I’d double check how the behaviour looks in a browser with a simple app that raises an exception: possible our test cases are dealing with ensuring the correct behaviour fully. Similarly I *expe",
+        "path": "uvicorn/middleware/debug.py",
+        "line": 81
+      },
+      {
+        "user": "lovelydinosaur",
+        "body": "Again, do we need an explicit `raise exc from None` here now?",
+        "path": "uvicorn/middleware/message_logger.py",
+        "line": null
+      },
+      {
+        "user": "lovelydinosaur",
+        "body": "Same question.",
+        "path": "uvicorn/middleware/message_logger.py",
+        "line": null
+      }
+    ]
+  },
+  "uvicorn_65": {
+    "total_comments": 6,
+    "substantive": 6,
+    "samples": [
+      {
+        "user": "lovelydinosaur",
+        "body": "`not not message_type  == 'websocket.close'`\r\n\r\n🤔",
+        "path": "uvicorn/protocols/websocket.py",
+        "line": null
+      },
+      {
+        "user": "lovelydinosaur",
+        "body": "`close = (message_type == 'websocket.close')` ?",
+        "path": "uvicorn/protocols/websocket.py",
+        "line": null
+      },
+      {
+        "user": "sirex",
+        "body": "`not not` sounds like a JavaScript.\r\n\r\n```python\r\nclose = message_type == 'websocket.close'\r\n```\r\n\r\nThis is totally enough and there is no need for parenthesis.\r\n\r\n```python\r\n>>> message_type = 'websocket.close'\r\n>>> close = message_type == 'websocket.close'\r\n>>> close\r\nTrue\r\n```",
+        "path": "uvicorn/protocols/websocket.py",
+        "line": null
+      },
+      {
+        "user": "lovelydinosaur",
+        "body": "Yes, tho possibly more readable with the explicit parenthesis. It's a bit hard to otherwise tell if it's intended to be like that otherwise, or an error.",
+        "path": "uvicorn/protocols/websocket.py",
+        "line": null
+      },
+      {
+        "user": "sirex",
+        "body": "It's python, explicit parenthesis are not needed, for example, no one writes:\r\n\r\n```python\r\nif (condition):\r\n    ...\r\n```\r\n\r\nBut I guess need for explicit parenthesis comes from experience with other programming languages where parenthesis are required.\r\n\r\nNevermind.",
+        "path": "uvicorn/protocols/websocket.py",
+        "line": null
+      }
+    ]
+  },
+  "black_25": {
+    "total_comments": 11,
+    "substantive": 11,
+    "samples": [
+      {
+        "user": "ambv",
+        "body": "Unnecessary.",
+        "path": "black.py",
+        "line": null
+      },
+      {
+        "user": "ambv",
+        "body": "Unnecessary.",
+        "path": "black.py",
+        "line": null
+      },
+      {
+        "user": "ambv",
+        "body": "I work on typing, too, so I'm wondering what made you choose `Type[]` here and why you chose `io.TextIOBase` specifically. Both choices are wrong here and I will explain why.\r\n\r\n1. `Type[]` is to signify the caller is going to pass a *class*, not an *object*. Here we want a regular object.\r\n2. `io.T",
+        "path": "black.py",
+        "line": null
+      },
+      {
+        "user": "ambv",
+        "body": "This is fine. Also, you can just use `file`. The builtin name `file` is deprecated, we only keep it to not break old code.",
+        "path": "tests/test_black.py",
+        "line": null
+      },
+      {
+        "user": "ambv",
+        "body": "I agree this got a bit messy now, let's see suggestions below.",
+        "path": "black.py",
+        "line": null
+      }
+    ]
+  },
+  "black_94": {
+    "total_comments": 6,
+    "substantive": 6,
+    "samples": [
+      {
+        "user": "ambv",
+        "body": "I'd call it VARARGS since you mean both `*args` and `**kwargs`.",
+        "path": "black.py",
+        "line": null
+      },
+      {
+        "user": "ambv",
+        "body": "I actually don't quite get why you added this. Can you add a unit test that showcases what splitting on stars does?",
+        "path": "black.py",
+        "line": null
+      },
+      {
+        "user": "ambv",
+        "body": "nit: Have you noticed how I modified all docstrings to be imperative? \"Return\" rather than \"Returns\".",
+        "path": "black.py",
+        "line": null
+      },
+      {
+        "user": "ambv",
+        "body": "nit: Ditto about \"Return\" vs. \"Returns\".\r\n\r\nAlso, prefer PEP 257-style \"single line description followed by a bigger body\" docstrings. I know I don't *always* follow this myself but I definitely try.",
+        "path": "black.py",
+        "line": null
+      },
+      {
+        "user": "ambv",
+        "body": "nit: Ditto about \"Return\" vs. \"Returns\".",
+        "path": "black.py",
+        "line": null
+      }
+    ]
+  },
+  "requests_7272": {
+    "total_comments": 36,
+    "substantive": 36,
+    "samples": [
+      {
+        "user": "cthoyt",
+        "body": "I know it would be a lot of work, but annotating the kwargs with an `Unpack[KwargsDict]` where `KwargsDict` is a `typing.TypedDict` would be great!\r\n\r\nI hacked this into my own code that interacts with requests code to make my usage more safe: \r\n\r\n- where I defined my own typed dict class https://gi",
+        "path": "src/requests/api.py",
+        "line": null
+      },
+      {
+        "user": "cthoyt",
+        "body": "also I am willing to PR this if you think it's a good idea / if you think an external contrib is better/easier than doing it yourself",
+        "path": "src/requests/api.py",
+        "line": null
+      },
+      {
+        "user": "cthoyt",
+        "body": "it would be lovely if these type hints were available through a \"public\" interface, since I've often written code that wraps a requests call, where I would want to use the ParamsType to annotate my own code\n\nI say public in quotes because I _could_ import this, but it feels wrong",
+        "path": "src/requests/_types.py",
+        "line": 81
+      },
+      {
+        "user": "nateprewitt",
+        "body": "Thanks for comment, @cthoyt! This is a good callout because it is a delta from typeshed that should've been in the overview.\n\nI played with Unpack for this but put that on pause because it got kind of messy. From what I was able to come up with we're going to need several different TypedDicts to acc",
+        "path": "src/requests/api.py",
+        "line": null
+      },
+      {
+        "user": "cthoyt",
+        "body": "one thing worth noting is that you can have (multiple) inheritance on typed dicts. this can make it easier to factor out similarities between typed dict definitions for several functions",
+        "path": "src/requests/api.py",
+        "line": null
+      }
+    ]
+  },
+  "requests_7310": {
+    "total_comments": 4,
+    "substantive": 4,
+    "samples": [
+      {
+        "user": "github-advanced-security[bot]",
+        "body": "## Use of a broken or weak cryptographic hashing algorithm on sensitive data\n\n[Sensitive data (password)](1) is used in a hashing algorithm (MD5) that is insecure for password hashing, since it is not a computationally expensive hash function.\n[Sensitive data (id)](2) is used in a hashing algorithm ",
+        "path": "src/requests/auth.py",
+        "line": 148
+      },
+      {
+        "user": "github-advanced-security[bot]",
+        "body": "## Use of a broken or weak cryptographic hashing algorithm on sensitive data\n\n[Sensitive data (password)](1) is used in a hashing algorithm (SHA1) that is insecure for password hashing, since it is not a computationally expensive hash function.\n[Sensitive data (id)](2) is used in a hashing algorithm",
+        "path": "src/requests/auth.py",
+        "line": 156
+      },
+      {
+        "user": "github-advanced-security[bot]",
+        "body": "## Use of a broken or weak cryptographic hashing algorithm on sensitive data\n\n[Sensitive data (password)](1) is used in a hashing algorithm (SHA256) that is insecure for password hashing, since it is not a computationally expensive hash function.\n\n[Show more details](https://github.com/psf/requests/",
+        "path": "src/requests/auth.py",
+        "line": 164
+      },
+      {
+        "user": "github-advanced-security[bot]",
+        "body": "## Use of a broken or weak cryptographic hashing algorithm on sensitive data\n\n[Sensitive data (password)](1) is used in a hashing algorithm (SHA512) that is insecure for password hashing, since it is not a computationally expensive hash function.\n\n[Show more details](https://github.com/psf/requests/",
+        "path": "src/requests/auth.py",
+        "line": 172
+      }
+    ]
+  },
+  "requests_7502": {
+    "total_comments": 5,
+    "substantive": 5,
+    "samples": [
+      {
+        "user": "nateprewitt",
+        "body": "I'm not sure we need both of these tests. Either class encompasses the behavior we're trying to guard against, and if we truly need both, the test should be parameterized.\n\nI'd bias towards removing the second though.",
+        "path": "tests/test_requests.py",
+        "line": null
+      },
+      {
+        "user": "nateprewitt",
+        "body": "Do we actually need `data` or `params`? The behavior should trigger with just `files`. Let's only use that to keep the tests intent clear.",
+        "path": "tests/test_requests.py",
+        "line": null
+      },
+      {
+        "user": "LoicPernod",
+        "body": "In that case, it would be better to parametrize or keep only the second, as that is the one that returns a _TemporaryFileWrapper (except on non Posix systems [source](https://github.com/python/cpython/blob/4fc4e3a5ac30ba4bccdcc7f475ef43a40d904b74/Lib/tempfile.py#L623)), which is the class that cause",
+        "path": "tests/test_requests.py",
+        "line": null
+      },
+      {
+        "user": "LoicPernod",
+        "body": "Yes, we could remove them, good call",
+        "path": "tests/test_requests.py",
+        "line": null
+      },
+      {
+        "user": "nateprewitt",
+        "body": "Sure, `NamedTemporaryFile` is fine for the test if that catches the wrapper issue.",
+        "path": "tests/test_requests.py",
+        "line": null
+      }
+    ]
+  },
+  "pytest_14546": {
+    "total_comments": 4,
+    "substantive": 4,
+    "samples": [
+      {
+        "user": "bluetech",
+        "body": "We should drop the \"e.g.\" part since it doesn't hold as of this commit.",
+        "path": "src/_pytest/assertion/util.py",
+        "line": null
+      },
+      {
+        "user": "bluetech",
+        "body": "\"are the per-line explanation\" -> \"is the detailed explanation\".\n\nI don't think \"per-line\" is entirely accurate.",
+        "path": "src/_pytest/assertion/util.py",
+        "line": null
+      },
+      {
+        "user": "bluetech",
+        "body": "Would move this above the `for line in source`, since it's not set or used in this block of code.",
+        "path": "src/_pytest/assertion/util.py",
+        "line": null
+      },
+      {
+        "user": "bluetech",
+        "body": "I suggest a comment like this: Only yield summary if there is a detailed explanation. Make sure there's a separating empty line after the summary.\n\nUsually I avoid comments which just describe what the code does, but in this case it took me a bit of effort to understand, so I think a comment would b",
+        "path": "src/_pytest/assertion/util.py",
+        "line": 199
+      }
+    ]
+  },
+  "redis_1040": {
+    "total_comments": 68,
+    "substantive": 65,
+    "samples": [
+      {
+        "user": "andymccurdy",
+        "body": "`pycodestyle` requires python 2.7 or greater. let's just set it to 3.6 for now.\r\n\r\n```suggestion\r\nbasepython = python3.6\r\n```",
+        "path": "tox.ini",
+        "line": null
+      },
+      {
+        "user": "andymccurdy",
+        "body": "I think the key/value pairs of the entry should be specified as a single dict arg rather than kwargs. This is one of the things I regret and intend to change about `ZADD`. I've seen a number of bug reports with `ZADD` where a user wanted to use an entry name that conflicted with one of the command a",
+        "path": "redis/client.py",
+        "line": null
+      },
+      {
+        "user": "andymccurdy",
+        "body": "```suggestion\r\n            if not isinstance(maxlen, (int, long)) or maxlen < 1:\r\n```\r\nfor python 2/3 compat we need `isinstance` to check both `int` and `long`.",
+        "path": "redis/client.py",
+        "line": null
+      },
+      {
+        "user": "andymccurdy",
+        "body": "`pieces.extend(pair)` is slightly more efficient.",
+        "path": "redis/client.py",
+        "line": null
+      },
+      {
+        "user": "andymccurdy",
+        "body": "```suggestion\r\n            if not isinstance(count, (int, long)) or count < 1:\r\n```\r\npy 2/3 compat",
+        "path": "redis/client.py",
+        "line": null
+      }
+    ]
+  },
+  "redis_846": {
+    "total_comments": 4,
+    "substantive": 4,
+    "samples": [
+      {
+        "user": "andymccurdy",
+        "body": "While the comment helps, this could be clearer testing: `e.errno == errno.EINTR`. I believe the `errno` module is in both Py2 and Py3.\r\n\r\nAlso, in what case does `e.errno is None` mean we should treat the error as an interrupt and try again?",
+        "path": "redis/_compat.py",
+        "line": null
+      },
+      {
+        "user": "andymccurdy",
+        "body": "If we just `raise` (without the `e`), we'll get the original traceback. I'm not 100% certain, but I believe on some Python versions `raise e` would raise the exception starting there rather than where the exception originally took place.",
+        "path": "redis/_compat.py",
+        "line": null
+      },
+      {
+        "user": "sethmlarson",
+        "body": "Sure, I'll switch this out.",
+        "path": "redis/_compat.py",
+        "line": null
+      },
+      {
+        "user": "sethmlarson",
+        "body": "Might be able to remove the `errno is None` check. I don't know if the `InterruptedError` exception sets `errno` on Python 3 but it might, we can try it! And I thought about doing the import but I'm not sure if all platforms define `errno.EINTR`. I know Windows has a lot of flakiness in the `errno` ",
+        "path": "redis/_compat.py",
+        "line": null
+      }
+    ]
+  },
+  "sklearn_92": {
+    "total_comments": 3,
+    "substantive": 2,
+    "samples": [
+      {
+        "user": "agramfort",
+        "body": "statistical (typo)",
+        "path": "doc/modules/datasets.rst",
+        "line": null
+      },
+      {
+        "user": "ogrisel",
+        "body": "hum copy and paste error: fixing it",
+        "path": "scikits/learn/datasets/twenty_newsgroups.py",
+        "line": null
+      }
+    ]
+  }
+}

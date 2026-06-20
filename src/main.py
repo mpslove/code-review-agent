@@ -282,7 +282,7 @@ def main():
             if merged_count > 0:
                 logger.info(f"Cross-category dedup: merged {merged_count} duplicate issues")
             # 按category重建
-            voted = dict(defaultdict(list))
+            voted = defaultdict(list)
             for vi in cross_merged.values():
                 voted[vi.issue.category].append(vi)
 
