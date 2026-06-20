@@ -1,0 +1,21 @@
+{
+  "repo": "encode/uvicorn",
+  "pr": 232,
+  "title": "Use `except Exception as some_name` consistently and log errors using exc_info",
+  "additions": 37,
+  "deletions": 48,
+  "issues": [
+    {
+      "file": "uvicorn/middleware/debug.py",
+      "line": 5,
+      "body": "I think there’s some adjustements needed in this block - eg `raise` May need to be `raise exc from None`. I’d double check how the behaviour looks in a browser with a simple app that raises an exception: possible our test cases are dealing with ensuring the correct behaviour fully. Similarly I *expe",
+      "user": "lovelydinosaur"
+    },
+    {
+      "file": "uvicorn/middleware/message_logger.py",
+      "line": 1,
+      "body": "Again, do we need an explicit `raise exc from None` here now?",
+      "user": "lovelydinosaur"
+    }
+  ]
+}

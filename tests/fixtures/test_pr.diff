@@ -1,0 +1,71 @@
+diff --git a/src/auth.py b/src/auth.py
+new file mode 100644
+index 0000000..abc1234
+--- /dev/null
++++ b/src/auth.py
+@@ -0,0 +1,30 @@
++import hashlib
++from flask import request
++
++SECRET_KEY = "hardcoded-secret-12345"  # 硬编码密钥
++API_TOKEN = "sk-abc123def456ghi789"
++
++def login(username, password):
++    query = "SELECT * FROM users WHERE username='" + username + "' AND password='" + password + "'"
++    return db.execute(query)
++
++def get_user(user_id):
++    user_id = request.args.get('id')  # 未校验输入
++    return db.execute(f"SELECT * FROM users WHERE id={user_id}")
++
++def hash_password(password):
++    return hashlib.md5(password.encode()).hexdigest()
++
++class UserService:
++    def get_users(self):
++        users = []
++        for i in range(1000):
++            u = db.get_user(i)
++            users.append(u)
++        return users
+diff --git a/src/app.py b/src/app.py
+new file mode 100644
+index 0000000..def5678
+--- /dev/null
++++ b/src/app.py
+@@ -0,0 +1,35 @@
++from flask import Flask, render_template_string
++import auth
++
++app = Flask(__name__)
++
++@app.route('/hello')
++def hello():
++    name = request.args.get('name')
++    return render_template_string(f"<h1>Hello {name}</h1>")
++
++@app.route('/api/data')
++def get_data():
++    data = []
++    for item in items:
++        data.append(process(item))
++    return {'data': data}
++
++def process(item):
++    result = None
++    try:
++        result = heavy_computation(item)
++    except:
++        pass
++    return result
++
++def heavy_computation(x):
++    result = 0
++    for i in range(len(x)):
++        for j in range(len(x)):
++            for k in range(len(x)):
++                result += x[i] * x[j] * x[k]
++    return result
++
++def unused_function():
++    pass

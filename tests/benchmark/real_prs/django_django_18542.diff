@@ -1,0 +1,58 @@
+diff --git a/django/db/models/functions/text.py b/django/db/models/functions/text.py
+index df826ffdb5a1..9c48659bf990 100644
+--- a/django/db/models/functions/text.py
++++ b/django/db/models/functions/text.py
+@@ -78,7 +78,7 @@ def pipes_concat_sql(self, compiler, connection, **extra_context):
+         return super(ConcatPair, coalesced).as_sql(
+             compiler,
+             connection,
+-            template="%(expressions)s",
++            template="(%(expressions)s)",
+             arg_joiner=" || ",
+             **extra_context,
+         )
+diff --git a/docs/releases/5.1.2.txt b/docs/releases/5.1.2.txt
+index 234c9e0bd5a9..1cf3f9df0903 100644
+--- a/docs/releases/5.1.2.txt
++++ b/docs/releases/5.1.2.txt
+@@ -9,4 +9,6 @@ Django 5.1.2 fixes several bugs in 5.1.1.
+ Bugfixes
+ ========
+ 
+-* ...
++* Fixed a regression in Django 5.1 that caused a crash when using the
++  PostgreSQL lookup :lookup:`trigram_similar` on output fields from ``Concat``
++  (:ticket:`35732`).
+diff --git a/tests/postgres_tests/test_trigram.py b/tests/postgres_tests/test_trigram.py
+index 812403a32437..b6c88c38a6f9 100644
+--- a/tests/postgres_tests/test_trigram.py
++++ b/tests/postgres_tests/test_trigram.py
+@@ -1,3 +1,6 @@
++from django.db.models import F, Value
++from django.db.models.functions import Concat
++
+ from . import PostgreSQLTestCase
+ from .models import CharFieldModel, TextFieldModel
+ 
+@@ -149,6 +152,21 @@ def test_trigram_strict_word_distance(self):
+             ],
+         )
+ 
++    def test_trigram_concat_precedence(self):
++        search_term = "im matthew"
++        self.assertSequenceEqual(
++            self.Model.objects.annotate(
++                concat_result=Concat(
++                    Value("I'm "),
++                    F("field"),
++                    output_field=self.Model._meta.get_field("field"),
++                ),
++            )
++            .filter(concat_result__trigram_similar=search_term)
++            .values("field"),
++            [{"field": "Matthew"}],
++        )
++
+ 
+ class TrigramTextFieldTest(TrigramTest):
+     """

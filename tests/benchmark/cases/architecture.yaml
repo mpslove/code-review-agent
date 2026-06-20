@@ -1,0 +1,12 @@
+name: "Architecture violations: coupling + layer breach"
+diff_file: "tests/fixtures/architecture.diff"
+expected:
+  security:
+    - file: "src/service.py"
+      line_start: 5
+      severity: "critical"
+      title_contains: "SQL"
+    - file: "src/service.py"
+      line_start: 7
+      severity: "critical"
+      title_contains: "SQL"

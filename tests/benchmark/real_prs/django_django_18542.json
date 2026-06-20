@@ -1,0 +1,71 @@
+{
+  "repo": "django/django",
+  "pr": 18542,
+  "title": "Fixed #35732 -- Wrapped Postgresql Concat args in parenthesis to fix operator precedence bug.",
+  "description": "Postgresql Concat args fix",
+  "issues": [
+    {
+      "file": "tests/postgres_tests/test_trigram.py",
+      "line": 1,
+      "body": "```suggestion\r\n        search_term = \"im matthew\"\r\n        self.assertSequenceEqual(\r\n            self.Model.objects.annotate(\r\n                concat_result=Concat(Value(\"I'm \"), F(\"field\")),\r\n```",
+      "user": "emicuencac",
+      "diff_hunk": "@@ -149,6 +152,21 @@ def test_trigram_strict_word_distance(self):\n             ],\n         )\n \n+    def test_trigram_concat_precedence(self):\n+       "
+    },
+    {
+      "file": "tests/postgres_tests/test_trigram.py",
+      "line": 1,
+      "body": "```suggestion\r\n                concat_result=Concat(\r\n                    F(\"field\"), Value(\"tew\"), output_field=self.model._meta.get_field(\"field\"),\r\n```",
+      "user": "charettes",
+      "diff_hunk": "@@ -149,6 +152,21 @@ def test_trigram_strict_word_distance(self):\n             ],\n         )\n \n+    def test_trigram_concat_precedence(self):\n+       "
+    },
+    {
+      "file": "tests/postgres_tests/test_trigram.py",
+      "line": 1,
+      "body": "Does this add a `(...)::text` to the mix? it was missing that output_field that the bug happened but if the result of having output_field implies the existence of that cast, then the bug does not happen",
+      "user": "avilaton",
+      "diff_hunk": "@@ -149,6 +152,21 @@ def test_trigram_strict_word_distance(self):\n             ],\n         )\n \n+    def test_trigram_concat_precedence(self):\n+       "
+    },
+    {
+      "file": "tests/postgres_tests/test_trigram.py",
+      "line": 1,
+      "body": "@charettes please advise there, not sure what would be the most accurate reproduction of the bug we think we found",
+      "user": "avilaton",
+      "diff_hunk": "@@ -149,6 +152,21 @@ def test_trigram_strict_word_distance(self):\n             ],\n         )\n \n+    def test_trigram_concat_precedence(self):\n+       "
+    },
+    {
+      "file": "tests/postgres_tests/test_trigram.py",
+      "line": 1,
+      "body": "How about setting `output_field` on `Value` instead of on `Concat`?",
+      "user": "emicuencac",
+      "diff_hunk": "@@ -149,6 +152,21 @@ def test_trigram_strict_word_distance(self):\n             ],\n         )\n \n+    def test_trigram_concat_precedence(self):\n+       "
+    },
+    {
+      "file": "tests/postgres_tests/test_trigram.py",
+      "line": 1,
+      "body": "```suggestion\r\n                    output_field=self.Model._meta.get_field(\"field\"),\r\n```",
+      "user": "avilaton",
+      "diff_hunk": "@@ -149,6 +152,25 @@ def test_trigram_strict_word_distance(self):\n             ],\n         )\n \n+    def test_trigram_concat_precedence(self):\n+       "
+    },
+    {
+      "file": "docs/releases/5.1.2.txt",
+      "line": 1,
+      "body": "```suggestion\r\n  ``Concat`` is used in combination with ``trigram_similar`` due to using \r\n```",
+      "user": "avilaton",
+      "diff_hunk": "@@ -9,4 +9,6 @@ Django 5.1.2 fixes several bugs in 5.1.1.\n Bugfixes\n ========\n \n-* ...\n+* Fixed a regression in Django 5.1 that caused a crash of ``.f"
+    },
+    {
+      "file": "docs/releases/5.1.2.txt",
+      "line": 1,
+      "body": "```suggestion\r\n* Fixed a regression in Django 5.1 that caused a crash when using the\r\n  PostgreSQL lookup :lookup:`trigram_similar` on output fields from ``Concat``\r\n  (:ticket:`35732`).\r\n```\r\nMaybe?\r\nThe release note should just detail what got fixed rather than how it was fixed :+1: ",
+      "user": "sarahboyce",
+      "diff_hunk": "@@ -9,4 +9,6 @@ Django 5.1.2 fixes several bugs in 5.1.1.\n Bugfixes\n ========\n \n-* ...\n+* Fixed a regression in Django 5.1 that caused a crash of ``.f"
+    },
+    {
+      "file": "docs/releases/5.1.2.txt",
+      "line": 1,
+      "body": "consider it done, thanks!",
+      "user": "avilaton",
+      "diff_hunk": "@@ -9,4 +9,6 @@ Django 5.1.2 fixes several bugs in 5.1.1.\n Bugfixes\n ========\n \n-* ...\n+* Fixed a regression in Django 5.1 that caused a crash of ``.f"
+    }
+  ]
+}

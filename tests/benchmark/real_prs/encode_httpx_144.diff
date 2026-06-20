@@ -1,0 +1,119 @@
+diff --git a/httpx/models.py b/httpx/models.py
+index 9cbdc250e2..04754af455 100644
+--- a/httpx/models.py
++++ b/httpx/models.py
+@@ -98,7 +98,8 @@ def __init__(
+                 self.components = self.components.copy_with(authority=idna_authority)
+ 
+         # Normalize scheme and domain name.
+-        self.components = self.components.normalize()
++        if self.is_absolute_url:
++            self.components = self.components.normalize()
+ 
+         # Add any query parameters.
+         if params:
+@@ -170,7 +171,7 @@ def is_absolute_url(self) -> bool:
+         Return `True` for absolute URLs such as 'http://example.com/path',
+         and `False` for relative URLs such as '/path'.
+         """
+-        # We don't use rfc3986's `is_absolute` because it treats
++        # We don't use `.is_absolute` from `rfc3986` because it treats
+         # URLs with a fragment portion as not absolute.
+         # What we actually care about is if the URL provides
+         # a scheme and hostname to which connections should be made.
+diff --git a/tests/models/test_url.py b/tests/models/test_url.py
+index 70089e0f1f..01489acd68 100644
+--- a/tests/models/test_url.py
++++ b/tests/models/test_url.py
+@@ -1,4 +1,6 @@
+ from httpx import URL
++from httpx.exceptions import InvalidURL
++import pytest
+ 
+ 
+ def test_idna_url():
+@@ -31,7 +33,7 @@ def test_url_eq_str():
+     assert str(url) == url
+ 
+ 
+-def test_url__params():
++def test_url_params():
+     url = URL("https://example.org:123/path/to/somewhere", params={"a": "123"})
+     assert str(url) == "https://example.org:123/path/to/somewhere?a=123"
+ 
+@@ -39,6 +41,75 @@ def test_url__params():
+     assert str(url) == "https://example.org:123/path/to/somewhere?a=123"
+ 
+ 
++def test_url_join():
++    """
++    Some basic URL joining tests.
++    """
++    url = URL("https://example.org:123/path/to/somewhere")
++    assert url.join('/somewhere-else') == "https://example.org:123/somewhere-else"
++    assert url.join('somewhere-else') == "https://example.org:123/path/to/somewhere-else"
++    assert url.join('../somewhere-else') == "https://example.org:123/path/somewhere-else"
++    assert url.join('../../somewhere-else') == "https://example.org:123/somewhere-else"
++
++
++def test_url_join_rfc3986():
++    """
++    URL joining tests, as-per reference examples in RFC 3986.
++
++    https://tools.ietf.org/html/rfc3986#section-5.4
++    """
++
++    url = URL("http://example.com/b/c/d;p?q")
++
++    with pytest.raises(InvalidURL):
++        assert url.join("g:h") == "g:h"
++
++    assert url.join("g") == "http://example.com/b/c/g"
++    assert url.join("./g") == "http://example.com/b/c/g"
++    assert url.join("g/") == "http://example.com/b/c/g/"
++    assert url.join("/g") == "http://example.com/g"
++    assert url.join("//g") == "http://g"
++    assert url.join("?y") == "http://example.com/b/c/d;p?y"
++    assert url.join("g?y") == "http://example.com/b/c/g?y"
++    assert url.join("#s") == "http://example.com/b/c/d;p?q#s"
++    assert url.join("g#s") == "http://example.com/b/c/g#s"
++    assert url.join("g?y#s") == "http://example.com/b/c/g?y#s"
++    assert url.join(";x") == "http://example.com/b/c/;x"
++    assert url.join("g;x") == "http://example.com/b/c/g;x"
++    assert url.join("g;x?y#s") == "http://example.com/b/c/g;x?y#s"
++    assert url.join("") == "http://example.com/b/c/d;p?q"
++    assert url.join(".") == "http://example.com/b/c/"
++    assert url.join("./") == "http://example.com/b/c/"
++    assert url.join("..") == "http://example.com/b/"
++    assert url.join("../") == "http://example.com/b/"
++    assert url.join("../g") == "http://example.com/b/g"
++    assert url.join("../..") == "http://example.com/"
++    assert url.join("../../") == "http://example.com/"
++    assert url.join("../../g") == "http://example.com/g"
++
++    assert url.join("../../../g") == "http://example.com/g"
++    assert url.join("../../../../g") == "http://example.com/g"
++
++    assert url.join("/./g") == "http://example.com/g"
++    assert url.join("/../g") == "http://example.com/g"
++    assert url.join("g.") == "http://example.com/b/c/g."
++    assert url.join(".g") == "http://example.com/b/c/.g"
++    assert url.join("g..") == "http://example.com/b/c/g.."
++    assert url.join("..g") == "http://example.com/b/c/..g"
++
++    assert url.join("./../g") == "http://example.com/b/g"
++    assert url.join("./g/.") == "http://example.com/b/c/g/"
++    assert url.join("g/./h") == "http://example.com/b/c/g/h"
++    assert url.join("g/../h") == "http://example.com/b/c/h"
++    assert url.join("g;x=1/./y") == "http://example.com/b/c/g;x=1/y"
++    assert url.join("g;x=1/../y") == "http://example.com/b/c/y"
++
++    assert url.join("g?y/./x") == "http://example.com/b/c/g?y/./x"
++    assert url.join("g?y/../x") == "http://example.com/b/c/g?y/../x"
++    assert url.join("g#s/./x") == "http://example.com/b/c/g#s/./x"
++    assert url.join("g#s/../x") == "http://example.com/b/c/g#s/../x"
++
++
+ def test_url_set():
+     urls = (
+         URL("http://example.org:123/path/to/somewhere"),

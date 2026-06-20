@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Environment
+.env
+*.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# Benchmark outputs (large)
+tests/benchmark/v4_*/
+tests/benchmark/v5_*/
+tests/benchmark/*/*.md
+!tests/benchmark/v4_ab20/*.md
+
+# Test cache
+.pytest_cache/
+.coverage
+
+# RAG index
+*.chroma/
+
+# OS
+.DS_Store
+Thumbs.db

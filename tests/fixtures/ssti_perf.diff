@@ -1,0 +1,41 @@
+diff --git a/src/app.py b/src/app.py
+new file mode 100644
+index 0000000..def5678
+--- /dev/null
++++ b/src/app.py
+@@ -0,0 +1,35 @@
++from flask import Flask, render_template_string
++import auth
++
++app = Flask(__name__)
++
++@app.route('/hello')
++def hello():
++    name = request.args.get('name')
++    return render_template_string(f"<h1>Hello {name}</h1>")
++
++@app.route('/api/data')
++def get_data():
++    data = []
++    for item in items:
++        data.append(process(item))
++    return {'data': data}
++
++def process(item):
++    result = None
++    try:
++        result = heavy_computation(item)
++    except:
++        pass
++    return result
++
++def heavy_computation(x):
++    result = 0
++    for i in range(len(x)):
++        for j in range(len(x)):
++            for k in range(len(x)):
++                result += x[i] * x[j] * x[k]
++    return result
++
++def unused_function():
++    pass

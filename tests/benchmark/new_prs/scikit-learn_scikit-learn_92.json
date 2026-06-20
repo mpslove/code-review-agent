@@ -1,0 +1,15 @@
+{
+  "repo": "scikit-learn/scikit-learn",
+  "pr": 92,
+  "title": "20newsgroups dataset",
+  "additions": 313,
+  "deletions": 100,
+  "issues": [
+    {
+      "file": "scikits/learn/datasets/twenty_newsgroups.py",
+      "line": 78,
+      "body": "hum copy and paste error: fixing it\n",
+      "user": "ogrisel"
+    }
+  ]
+}

@@ -1,0 +1,141 @@
+{
+  "repo": "django/django",
+  "pr": 19840,
+  "title": "Fixes #36590 - subclasses of BaseCache should use specialized implementation of methods for async version",
+  "description": "BaseCache specialized impl",
+  "issues": [
+    {
+      "file": "tests/cache/tests.py",
+      "line": 1,
+      "body": "These tests will pass even without your changes applied as these methods are always present they were just the wrong implementations. You could assert against their nature instead and the test doesn't need to be `async`\r\n\r\n```suggestion\r\n    def test_async_impl(self):\r\n        if cache.get_many is n",
+      "user": "charettes",
+      "diff_hunk": "@@ -1165,6 +1165,14 @@ def test_get_or_set_racing(self):\n             cache_add.return_value = False\n             self.assertEqual(cache.get_or_set(\"k"
+    },
+    {
+      "file": "django/core/cache/backends/db.py",
+      "line": 1,
+      "body": "should be named `aget_many` not `aget`",
+      "user": "charettes",
+      "diff_hunk": "@@ -4,12 +4,26 @@\n import pickle\n from datetime import UTC, datetime\n \n+from asgiref.sync import sync_to_async\n+\n from django.conf import settings\n fr"
+    },
+    {
+      "file": "django/core/cache/backends/db.py",
+      "line": 1,
+      "body": "This should be defined on `BaseCache` and not `BaseDatabaseCache`. As pointed out in the ticket the memcached and redis backend are also affected.",
+      "user": "charettes",
+      "diff_hunk": "@@ -39,6 +53,18 @@ class CacheEntry:\n \n         self.cache_model_class = CacheEntry\n \n+    def __init_subclass__(cls, **kwargs):\n+        # If a subcl"
+    },
+    {
+      "file": "django/core/cache/backends/db.py",
+      "line": 1,
+      "body": "This should not add anything if the subclass has its own specialized `aget_many`",
+      "user": "charettes",
+      "diff_hunk": "@@ -39,6 +53,18 @@ class CacheEntry:\n \n         self.cache_model_class = CacheEntry\n \n+    def __init_subclass__(cls, **kwargs):\n+        # If a subcl"
+    },
+    {
+      "file": "docs/releases/5.2.7.txt",
+      "line": 1,
+      "body": "Being an optimization / cleanup it doesn't qualify for a backport.",
+      "user": "charettes",
+      "diff_hunk": "@@ -9,4 +9,7 @@ Django 5.2.7 fixes several bugs in 5.2.6.\n Bugfixes\n ========\n \n-* ...\n+* ``BaseDatabaseCache`` subclasses that implement a specialize"
+    },
+    {
+      "file": "django/core/cache/backends/db.py",
+      "line": 1,
+      "body": "Based on ticket comments, I had thought the goal was to only apply this change to subclasses of BaseDatabaseCache.  Moving these to BaseCache is ultimately cleaner. ",
+      "user": "eevelweezel",
+      "diff_hunk": "@@ -39,6 +53,18 @@ class CacheEntry:\n \n         self.cache_model_class = CacheEntry\n \n+    def __init_subclass__(cls, **kwargs):\n+        # If a subcl"
+    },
+    {
+      "file": "django/core/cache/backends/db.py",
+      "line": 1,
+      "body": "Adding these directly to BaseCache vs trying to apply them conditionally via __init_subclass__ is ultimately cleaner. ",
+      "user": "eevelweezel",
+      "diff_hunk": "@@ -39,6 +53,18 @@ class CacheEntry:\n \n         self.cache_model_class = CacheEntry\n \n+    def __init_subclass__(cls, **kwargs):\n+        # If a subcl"
+    },
+    {
+      "file": "tests/cache/tests.py",
+      "line": 1,
+      "body": "The object ID ultimately doesn't match, so an is comparison fails.  I've settled on comparing pickles of the methods and asserting that calling the async method calls the sync version.   ",
+      "user": "eevelweezel",
+      "diff_hunk": "@@ -1165,6 +1165,14 @@ def test_get_or_set_racing(self):\n             cache_add.return_value = False\n             self.assertEqual(cache.get_or_set(\"k"
+    },
+    {
+      "file": "docs/releases/5.2.7.txt",
+      "line": 1,
+      "body": "Moved this to 6.0, under cache.",
+      "user": "eevelweezel",
+      "diff_hunk": "@@ -9,4 +9,7 @@ Django 5.2.7 fixes several bugs in 5.2.6.\n Bugfixes\n ========\n \n-* ...\n+* ``BaseDatabaseCache`` subclasses that implement a specialize"
+    },
+    {
+      "file": "django/core/cache/backends/db.py",
+      "line": 1,
+      "body": "This was ultimately removed.",
+      "user": "eevelweezel",
+      "diff_hunk": "@@ -4,12 +4,26 @@\n import pickle\n from datetime import UTC, datetime\n \n+from asgiref.sync import sync_to_async\n+\n from django.conf import settings\n fr"
+    },
+    {
+      "file": "docs/releases/5.2.7.txt",
+      "line": 1,
+      "body": "We should still remove the release note from here and have no changes to this file",
+      "user": "sarahboyce",
+      "diff_hunk": "@@ -9,4 +9,7 @@ Django 5.2.7 fixes several bugs in 5.2.6.\n Bugfixes\n ========\n \n-* ...\n+* ``BaseDatabaseCache`` subclasses that implement a specialize"
+    },
+    {
+      "file": "docs/releases/6.0.txt",
+      "line": 1,
+      "body": "```suggestion\r\n```\r\nI actually don't think a release note is necessary, this is mostly a bug fix and this information isn't new",
+      "user": "sarahboyce",
+      "diff_hunk": "@@ -217,6 +217,28 @@ Minor features\n   ensures consistent path ordering in manifest files, making them more\n   reproducible and reducing unnecessary d"
+    },
+    {
+      "file": "django/core/cache/backends/base.py",
+      "line": 1,
+      "body": "I think we also need to do something similar for `aclose`, `aincr`, `ahas_key` as these are overwritten\r\n\r\nBut I also like Simon's ticket suggestion that we should add checks for whether the function has been overridden e.g.\r\n```python\r\n        if self.get_many.__func__ is not BaseCache.get_many:\r\n ",
+      "user": "sarahboyce",
+      "diff_hunk": ""
+    },
+    {
+      "file": "docs/releases/5.2.7.txt",
+      "line": 1,
+      "body": "Apologies, I thought I'd taken that out. ",
+      "user": "eevelweezel",
+      "diff_hunk": "@@ -9,4 +9,7 @@ Django 5.2.7 fixes several bugs in 5.2.6.\n Bugfixes\n ========\n \n-* ...\n+* ``BaseDatabaseCache`` subclasses that implement a specialize"
+    },
+    {
+      "file": "django/core/cache/backends/base.py",
+      "line": 1,
+      "body": "All of the BaseCache async methods should now be consistently implemented.  \r\n\r\nNow that this is implemented directly in BaseCache (vs in conditional logic in `__init_subclass__`), is this check still necessary?  I've added a test case that asserts the expected inheritance. ",
+      "user": "eevelweezel",
+      "diff_hunk": ""
+    },
+    {
+      "file": "django/core/cache/backends/base.py",
+      "line": 1,
+      "body": "Yes, because while this PR fixes an inheritance problem, it takes a step backwards in the async implementations for all cases where these are not overwritten",
+      "user": "sarahboyce",
+      "diff_hunk": ""
+    },
+    {
+      "file": "django/core/cache/backends/base.py",
+      "line": 1,
+      "body": "Ah, I see.  Revising. ",
+      "user": "eevelweezel",
+      "diff_hunk": ""
+    },
+    {
+      "file": "tests/cache/tests.py",
+      "line": 1,
+      "body": "I would suggest a more verbose test method name. You could do away with the comment in that case.",
+      "user": "jacobtylerwalls",
+      "diff_hunk": "@@ -1165,6 +1165,16 @@ def test_get_or_set_racing(self):\n             cache_add.return_value = False\n             self.assertEqual(cache.get_or_set(\"k"
+    },
+    {
+      "file": "tests/cache/tests.py",
+      "line": 1,
+      "body": "This is always False, so the assertions aren't running.",
+      "user": "jacobtylerwalls",
+      "diff_hunk": "@@ -1165,6 +1165,16 @@ def test_get_or_set_racing(self):\n             cache_add.return_value = False\n             self.assertEqual(cache.get_or_set(\"k"
+    }
+  ]
+}

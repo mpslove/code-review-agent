@@ -1,0 +1,129 @@
+{
+  "repo": "aio-libs/aiohttp",
+  "pr": 159,
+  "title": "Add aiohttp.web",
+  "additions": 676,
+  "deletions": 0,
+  "issues": [
+    {
+      "file": "aiohttp/web/request.py",
+      "line": 143,
+      "body": "This property returns nothing. As planned?\n",
+      "user": "kxepal"
+    },
+    {
+      "file": "aiohttp/web/request.py",
+      "line": 246,
+      "body": "Looks a bit inconsistent: you explicitly defines POST method, but implicitly GET one. Docs and suggestions will get confused.\n",
+      "user": "kxepal"
+    },
+    {
+      "file": "aiohttp/web/urldispatch.py",
+      "line": 18,
+      "body": "OPTIONS is missed. It actually rarely need until you face the CORs thing, but it's quite often happens if you build some web service.\n",
+      "user": "kxepal"
+    },
+    {
+      "file": "aiohttp/web/request.py",
+      "line": 52,
+      "body": "Cookies protocol is a bit weird. May be extract it into separate dict-like class with some more nice API?\n",
+      "user": "kxepal"
+    },
+    {
+      "file": "aiohttp/web/request.py",
+      "line": 376,
+      "body": "Double decode happens there: first for `value = value.decode('utf-8')` second for `decode` lambda in case if charset isn't `utf-8`.\n",
+      "user": "kxepal"
+    },
+    {
+      "file": "aiohttp/web/request.py",
+      "line": 371,
+      "body": "May be respect charset here?\n",
+      "user": "kxepal"
+    },
+    {
+      "file": "aiohttp/web/request.py",
+      "line": 143,
+      "body": "Not finished yet but @fafhrd91 asked me to merge existing branch -- we'll publish it in new release.\n",
+      "user": "asvetlov"
+    },
+    {
+      "file": "aiohttp/web/urldispatch.py",
+      "line": 32,
+      "body": "Resolve could be more optimal: instead of storing all the routes in list, you can put them in dict and first, look up by method and only after - by path. Also, HTTP 406/415 aren't respected here (which could also optimize lookup complexity).\n",
+      "user": "kxepal"
+    },
+    {
+      "file": "aiohttp/web/request.py",
+      "line": 52,
+      "body": "Do you mean co-existing cookies dict and set_cookie method at the same time?\n",
+      "user": "asvetlov"
+    },
+    {
+      "file": "aiohttp/web/request.py",
+      "line": 246,
+      "body": "POST should be coroutine: it reads data from input stream. You can skip reading if you don't need to process POST parameters.\nGET is just a dict constructed from query string. Do you like to make GET coroutine also?\n",
+      "user": "asvetlov"
+    },
+    {
+      "file": "aiohttp/web/request.py",
+      "line": 371,
+      "body": "I have to take a look twice -- the code was borrowed from WebOb.\n",
+      "user": "asvetlov"
+    },
+    {
+      "file": "aiohttp/web/urldispatch.py",
+      "line": 18,
+      "body": "OPTIONS added.\nI'll transplate CORS support from aiorest a bit later after stabilizing API.\n",
+      "user": "asvetlov"
+    },
+    {
+      "file": "aiohttp/web/request.py",
+      "line": 246,
+      "body": "Not sure - I don't know the use case for now, but at least I feel it need to be declared explicitly via `def GET`.\n",
+      "user": "kxepal"
+    },
+    {
+      "file": "aiohttp/web/urldispatch.py",
+      "line": 32,
+      "body": "Linear lookup is very simple for both writing and understanding.\nIf you like some different way I guess to implement another router.\n",
+      "user": "asvetlov"
+    },
+    {
+      "file": "aiohttp/web/request.py",
+      "line": 52,
+      "body": "Yes. While all others are full featured properties, the cookies is different. However, not sure how for now, but it could be better. May be figure something later.\n",
+      "user": "kxepal"
+    },
+    {
+      "file": "aiohttp/web/urldispatch.py",
+      "line": 32,
+      "body": "Good, as an option. May be I'll have a chance to backport the one I have from another project - it uses the similar logic I described.\n",
+      "user": "kxepal"
+    },
+    {
+      "file": "aiohttp/web/request.py",
+      "line": 246,
+      "body": "For me, it's overkill to use a coroutine to read GET params, they are in the first line of HTTP request, instead of POST payload could be very big, it justifies the usage of a coroutine.\n",
+      "user": "ludovic-gasc"
+    },
+    {
+      "file": "aiohttp/web/request.py",
+      "line": 375,
+      "body": "Yocto detail: you use 'utf-8' notation in others places, but 'utf8' in this place.\n",
+      "user": "ludovic-gasc"
+    },
+    {
+      "file": "aiohttp/web/request.py",
+      "line": 375,
+      "body": "Copy from WebOb :) I'll change it\n",
+      "user": "asvetlov"
+    },
+    {
+      "file": "aiohttp/web/request.py",
+      "line": 246,
+      "body": "Yes, that's the reason for chosen design decision.\nBut maybe we change it in few days before publishing new aiohttp release -- after the event API should be stable.\nSo any comments are very appreciated. \n",
+      "user": "asvetlov"
+    }
+  ]
+}

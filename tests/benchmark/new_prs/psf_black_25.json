@@ -1,0 +1,63 @@
+{
+  "repo": "psf/black",
+  "pr": 25,
+  "title": "Add piping from stdin to stdout with a -",
+  "additions": 58,
+  "deletions": 21,
+  "issues": [
+    {
+      "file": "black.py",
+      "line": 1,
+      "body": "I work on typing, too, so I'm wondering what made you choose `Type[]` here and why you chose `io.TextIOBase` specifically. Both choices are wrong here and I will explain why.\r\n\r\n1. `Type[]` is to signify the caller is going to pass a *class*, not an *object*. Here we want a regular object.\r\n2. `io.T",
+      "user": "ambv"
+    },
+    {
+      "file": "tests/test_black.py",
+      "line": 1,
+      "body": "This is fine. Also, you can just use `file`. The builtin name `file` is deprecated, we only keep it to not break old code.",
+      "user": "ambv"
+    },
+    {
+      "file": "black.py",
+      "line": 1,
+      "body": "I agree this got a bit messy now, let's see suggestions below.",
+      "user": "ambv"
+    },
+    {
+      "file": "black.py",
+      "line": 1,
+      "body": "Remove this special case. Dedent the for loop as it was before.",
+      "user": "ambv"
+    },
+    {
+      "file": "black.py",
+      "line": 1,
+      "body": "*Here* just do `sources.append(Path('-'))`.",
+      "user": "ambv"
+    },
+    {
+      "file": "black.py",
+      "line": 1,
+      "body": "Since `-` is an unlikely real file name, it would be better to say `if not p.is_file() and str(p) == '-':`",
+      "user": "ambv"
+    },
+    {
+      "file": "black.py",
+      "line": 1,
+      "body": "Note: with my suggested changes to `main()`, if a user passes more than one file name, the tool will fail with \"FileNotFoundError: [Errno 2] No such file or directory: '-'\" and I think this is clear enough of an indication that it wasn't treated as stdin by the tool then. Since the report at the end",
+      "user": "ambv"
+    },
+    {
+      "file": "black.py",
+      "line": 1,
+      "body": "Ah, I clearly misunderstood the purpose of `Type`. I thught it was to specify an object of a class *or subclass* with the given type. Not running mypy much led to me never finding out I was getting this wrong! :laughing: Will have to read throgh `typing`'s docs a bit more thoroughly.",
+      "user": "treuherz"
+    },
+    {
+      "file": "black.py",
+      "line": 33,
+      "body": "Removing the report text from stdout when piping looks as simple as indenting this one line in under the else block.",
+      "user": "joslarson"
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "repo": "encode/httpx",
+  "pr": 144,
+  "title": "Fix `URL.join(...)`",
+  "description": "Fix URL.join",
+  "issues": [
+    {
+      "file": "tests/models/test_url.py",
+      "line": 20,
+      "body": "Can we also get some tests with other components besides path? (ie `.join(\"?a=1\") -> \"https://example.org:123?a=1\"` and `.join(\"#fragment\") -> \"https://example.org:123#fragment\"`)\r\n\r\nWhat about a few `..` and `.` cases as well? (`.join(\"../../../../../abc\") -> \"https://example.org/abc\")\r\n\r\nAlso sinc",
+      "user": "sethmlarson",
+      "diff_hunk": "@@ -31,14 +31,28 @@ def test_url_eq_str():\n     assert str(url) == url\n \n \n-def test_url__params():\n+def test_url_params():\n     url = URL(\"https://ex"
+    },
+    {
+      "file": "tests/models/test_url.py",
+      "line": 20,
+      "body": "Taking verbatim the cases from the rfc and replacing `a` with `example.com`, the following tests pass with this PR:\r\n\r\n```python\r\nimport pytest\r\nfrom httpx.exceptions import InvalidURL\r\n\r\ndef test_url_join_rfc3986():\r\n    url = URL(\"http://example.com/b/c/d;p?q\")\r\n\r\n    with pytest.raises(InvalidURL",
+      "user": "StephenBrown2",
+      "diff_hunk": "@@ -31,14 +31,28 @@ def test_url_eq_str():\n     assert str(url) == url\n \n \n-def test_url__params():\n+def test_url_params():\n     url = URL(\"https://ex"
+    },
+    {
+      "file": "tests/models/test_url.py",
+      "line": 20,
+      "body": "That's amazing - thanks @StephenBrown2!\r\nPulled that in now.",
+      "user": "lovelydinosaur",
+      "diff_hunk": "@@ -31,14 +31,28 @@ def test_url_eq_str():\n     assert str(url) == url\n \n \n-def test_url__params():\n+def test_url_params():\n     url = URL(\"https://ex"
+    }
+  ]
+}

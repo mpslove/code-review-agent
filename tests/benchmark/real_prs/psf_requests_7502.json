@@ -1,0 +1,43 @@
+{
+  "repo": "psf/requests",
+  "pr": 7502,
+  "title": "Fix `_encode_files` detection for `__getattr__`-based file wrappers",
+  "description": "Fix _encode_files detection",
+  "issues": [
+    {
+      "file": "tests/test_requests.py",
+      "line": 1,
+      "body": "I'm not sure we need both of these tests. Either class encompasses the behavior we're trying to guard against, and if we truly need both, the test should be parameterized.\n\nI'd bias towards removing t",
+      "user": "nateprewitt",
+      "diff_hunk": "@@ -1087,6 +1087,32 @@ def test_different_encodings_dont_break_post(self, httpbin):\n             )\n "
+    },
+    {
+      "file": "tests/test_requests.py",
+      "line": 1,
+      "body": "Do we actually need `data` or `params`? The behavior should trigger with just `files`. Let's only use that to keep the tests intent clear.",
+      "user": "nateprewitt",
+      "diff_hunk": "@@ -1087,6 +1087,32 @@ def test_different_encodings_dont_break_post(self, httpbin):\n             )\n "
+    },
+    {
+      "file": "tests/test_requests.py",
+      "line": 1,
+      "body": "In that case, it would be better to parametrize or keep only the second, as that is the one that returns a _TemporaryFileWrapper (except on non Posix systems [source](https://github.com/python/cpython",
+      "user": "LoicPernod",
+      "diff_hunk": "@@ -1087,6 +1087,32 @@ def test_different_encodings_dont_break_post(self, httpbin):\n             )\n "
+    },
+    {
+      "file": "tests/test_requests.py",
+      "line": 1,
+      "body": "Yes, we could remove them, good call",
+      "user": "LoicPernod",
+      "diff_hunk": "@@ -1087,6 +1087,32 @@ def test_different_encodings_dont_break_post(self, httpbin):\n             )\n "
+    },
+    {
+      "file": "tests/test_requests.py",
+      "line": 1,
+      "body": "Sure, `NamedTemporaryFile` is fine for the test if that catches the wrapper issue.",
+      "user": "nateprewitt",
+      "diff_hunk": "@@ -1087,6 +1087,32 @@ def test_different_encodings_dont_break_post(self, httpbin):\n             )\n "
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "repo": "psf/black",
+  "pr": 94,
+  "title": "Lines now break before all delimiters",
+  "additions": 163,
+  "deletions": 51,
+  "issues": [
+    {
+      "file": "black.py",
+      "line": 1,
+      "body": "I'd call it VARARGS since you mean both `*args` and `**kwargs`.",
+      "user": "ambv"
+    },
+    {
+      "file": "black.py",
+      "line": 1,
+      "body": "I actually don't quite get why you added this. Can you add a unit test that showcases what splitting on stars does?",
+      "user": "ambv"
+    },
+    {
+      "file": "black.py",
+      "line": 1,
+      "body": "nit: Have you noticed how I modified all docstrings to be imperative? \"Return\" rather than \"Returns\".",
+      "user": "ambv"
+    },
+    {
+      "file": "black.py",
+      "line": 1,
+      "body": "nit: Ditto about \"Return\" vs. \"Returns\".\r\n\r\nAlso, prefer PEP 257-style \"single line description followed by a bigger body\" docstrings. I know I don't *always* follow this myself but I definitely try.",
+      "user": "ambv"
+    },
+    {
+      "file": "black.py",
+      "line": 1,
+      "body": "nit: Ditto about \"Return\" vs. \"Returns\".",
+      "user": "ambv"
+    },
+    {
+      "file": "black.py",
+      "line": 1,
+      "body": "nit: parens are spurious here. We will teach Black to do this transformation on its own 😏 ",
+      "user": "ambv"
+    }
+  ]
+}

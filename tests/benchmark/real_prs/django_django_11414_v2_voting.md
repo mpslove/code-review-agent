@@ -1,0 +1,130 @@
+# 🤖 AI Code Review Report (Multi-Round Voting)
+
+**Rounds**: 3 | **Min Consensus**: 1/3
+**Diff**: 2 files, +184 -38
+**Total Consensus Issues**: 7
+
+---
+
+### Performance Review (3 consensus)
+
+🔵 **[LOW]** `django/http/response.py:479` — 大文件读取计算Content-Length导致潜在内存和CPU开销 `[1/3 rounds]`
+> 在 `FileResponse.set_headers` 方法中，当文件对象具有 `seek` 方法但没有 `tell` 属性时（`elif seekable:` 分支），通过 `sum(iter(lambda: len(filelike.read(self.block_size)), 0))` 读取整个文件内容来计算长度。这会导致将整个文件加载到内存中（即使按块读取），对于大文件可能引发内存耗尽
+<details><summary>💡 Suggestion</summary>
+
+```
+优先使用 `filelike.seek(0, io.SEEK_END)` 和 `filelike.tell()` 组合（若对象有 `tell` 方法）；若没有 `tell`，可尝试通过 `os.fstat(filelike.fileno()).st_size` 获取大小（需对象有 `fileno`）；若均不可用，考虑延迟计算或要求文件对象提供 `tell` 能力。修改示例：
+```
+if hasattr(filelike, 'tell'):
+    total_size = ...  # 现有逻辑
+elif seekable:
+    # 避免读全部内容，优先使用系统调用
+    if hasattr(filelike, 'fileno'):
+        import os
+        try:
+            self.headers['Content-Length'] = str(os.fstat(filelike.fileno()).st_size - filelike.tell() if hasattr(filelike, 'tell') else os.fst
+```
+</details>
+📎 *Ref: PERF-001*
+
+🔴 **[CRITICAL]** `django/http/response.py:477` — 低效的Content-Length计算导致整个文件被读取 `[1/3 rounds]`
+> 在`set_headers`方法中，当`filelike`对象有`seek`但缺少`tell`方法时（即`hasattr(filelike, 'tell')`为False且`seekable`为True），会执行`self.headers['Content-Length'] = sum(iter(lambda: len(filelike.read(self.block_size)), 0))`，通
+<details><summary>💡 Suggestion</summary>
+
+```
+避免使用读取整个文件的方式计算长度。如果对象不支持`tell`，可以考虑以下两种方式之一：1) 对于已知为普通文件的对象，通过文件名使用`os.path.getsize`；2) 如果文件名不可用，则放弃设置Content-Length（因为客户端可通过分块传输或Connection: close处理）。
+
+优化后的代码示例：
+```python
+elif seekable:
+    # 对于不支持tell的seekable对象，尝试通过文件名获取大小
+    if filename and os.path.exists(filename):
+        self.headers['Content-Length'] = os.path.getsize(filename) - filelike.tell()  # 注意：tell可能不存在，这里仅作示意
+    # 否则，无法有效获取长度，不设置Content-Length
+```
+更健壮的做法：将`elif seekable:`分支改为不设置Content-Length，因为能触发此分支的对象非常罕见，且设置错误长度会导致更严重的问题
+```
+</details>
+📎 *Ref: PERF-001*
+
+🟠 **[HIGH]** `django/http/response.py:475` — 对于无tell但可seek的文件对象，计算Content-Length时全量读取文件导致低效 `[1/3 rounds]`
+> 在`set_headers`方法中，对于有`seekable`属性但没有`tell`方法的文件对象，使用`sum(iter(lambda: len(filelike.read(self.block_size)), 0))`来遍历整个文件以计算内容长度。这种实现会完整读取文件内容到内存（每次`self.block_size`字节），对于大文件会消耗大量CPU和内存，并且导致两次读取（一次计算长度，一
+<details><summary>💡 Suggestion</summary>
+
+```
+对于可seek但没有tell的对象，可以利用seek的返回值直接获取文件末尾位置以计算长度，避免全量读取。修改如下：
+```python
+elif seekable:
+    end_pos = filelike.seek(0, io.SEEK_END)
+    self.headers['Content-Length'] = str(end_pos)
+    filelike.seek(0)  # 回到文件开头
+```
+如果需要在响应流式传输时保留原始位置，可以记录初始位置（通过尝试seek(0, io.SEEK_CUR)但某些对象可能不支持），但常见场景（如文件）从头开始流式传输即可。
+```
+</details>
+📎 *Ref: N/A*
+
+
+### Style Review (4 consensus)
+
+🟡 **[MEDIUM]** `django/http/response.py:467` — 缺失异常处理 `[1/3 rounds]`
+> 在计算 Content-Length 的代码块中，对文件对象执行 seek()、tell() 等操作未捕获可能的异常（如 io.UnsupportedOperation）。具体代码行：
++        if hasattr(filelike, 'tell'):
++            if seekable:
++                initial_position = fileli
+<details><summary>💡 Suggestion</summary>
+
+```
+对涉及文件指针移动的操作添加 try-except 块，捕获 OSError 或 io.UnsupportedOperation，并在异常发生时合理设置 Content-Length（例如跳过设置或设为 None）。例如：
+            try:
+                initial_position = filelike.tell()
+                filelike.seek(0, io.SEEK_END)
+                self.headers['Content-Length'] = filelike.tell() - initial_position
+                filelike.seek(initial_position)
+            except (OSError, io.UnsupportedOperation):
+                pass  # 或设置 Content-Length 为 None
+```
+</details>
+📎 *Ref: CWE-248*
+
+🔵 **[LOW]** `tests/responses/test_fileresponse.py:39` — 重复测试数据 `[1/3 rounds]`
+> 在 test_content_length_nonzero_starting_position_buffer 和 test_response_nonzero_starting_position 中重复定义了相同的测试数据元组：
++        test_tuples = (
++            ('BytesIO', io.BytesIO),
++            ('Unseekab
+<details><summary>💡 Suggestion</summary>
+
+```
+提取为类变量或模块常量，例如在 FileResponseTests 类内定义：
+    BUFFER_TYPES = (
+        ('BytesIO', io.BytesIO),
+        ('UnseekableBytesIO', UnseekableBytesIO),
+    )
+然后在各测试方法中引用 self.BUFFER_TYPES。
+```
+</details>
+📎 *Ref: DRY*
+
+🔵 **[LOW]** `tests/responses/test_fileresponse.py:79` — 测试方法内定义辅助类导致方法过长 `[1/3 rounds]`
+> 在 test_content_length_nonzero_starting_position_file_seekable_no_tell 方法内部定义了完整的 TestFile 类（约30行），使得该方法总行数超过40行。内部类定义应移出测试方法以减少复杂度。相关行：
++        class TestFile:
++            def __init__(self, path, *
+<details><summary>💡 Suggestion</summary>
+
+```
+将 TestFile 类提取为模块级别的辅助类（或在 FileResponseTests 类内作为嵌套类，但不应在方法内定义），并减少测试方法的行数。
+```
+</details>
+📎 *Ref: PEP 8 - Function Length*
+
+🔵 **[LOW]** `tests/responses/test_fileresponse.py:36` — 重复的测试数据定义 `[1/3 rounds]`
+> 在测试方法 `test_content_length_nonzero_starting_position_buffer` 和 `test_response_nonzero_starting_position` 中，均定义了相同的元组 `test_tuples = (('BytesIO', io.BytesIO), ('UnseekableBytesIO', UnseekableBytesIO))`
+<details><summary>💡 Suggestion</summary>
+
+```
+将公共的测试数据定义为类属性或全局常量，例如在类顶部添加 `buffer_types = (('BytesIO', io.BytesIO), ('UnseekableBytesIO', UnseekableBytesIO))`，然后在两个测试方法中引用 `self.buffer_types` 或直接使用常量。
+```
+</details>
+
+---
+*Generated by Multi-Round Voting Agent — 3 rounds per reviewer*

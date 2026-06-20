@@ -1,0 +1,399 @@
+{
+  "repo": "redis/redis-py",
+  "pr": 1040,
+  "title": "supports for all streams operations",
+  "additions": 641,
+  "deletions": 43,
+  "issues": [
+    {
+      "file": "tox.ini",
+      "line": 1,
+      "body": "`pycodestyle` requires python 2.7 or greater. let's just set it to 3.6 for now.\r\n\r\n```suggestion\r\nbasepython = python3.6\r\n```",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "I think the key/value pairs of the entry should be specified as a single dict arg rather than kwargs. This is one of the things I regret and intend to change about `ZADD`. I've seen a number of bug reports with `ZADD` where a user wanted to use an entry name that conflicted with one of the command a",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "```suggestion\r\n            if not isinstance(maxlen, (int, long)) or maxlen < 1:\r\n```\r\nfor python 2/3 compat we need `isinstance` to check both `int` and `long`.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "`pieces.extend(pair)` is slightly more efficient.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "```suggestion\r\n            if not isinstance(count, (int, long)) or count < 1:\r\n```\r\npy 2/3 compat",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "```suggestion\r\n            if not isinstance(count, (int, long)) or count < 1:\r\n```\r\npy2/3 compat",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "I think `streams` should be a dict argument rather than kwargs for the same reason in xadd.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "```suggestion\r\n            if not isinstance(block, (int, long)) or block < 0:\r\n```\r\npy2/3 compat",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "```suggestion\r\n            if not isinstance(count, (int, long)) or count < 1:\r\n```\r\npy2/3 compat",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "Looks like `xinfo_stream` is defined twice. We can remove this one.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "Looks like `xinfo_consumers` is defined twice. We can remove this one.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "Looks like `xinfo_groups` is defined twice. We can remove this one.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "Looks like `xack` is defined twice. We can remove this one.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "Looks like `xdel` is defined twice. We can remove this one.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "Looks like `xtrim` is defined twice. We can remove this one.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "I think streams should be a dict argument instead of kwargs for the same reason suggested above.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "I think at least one stream is required for `XREADGROUP`. If so, `streams is None` should raise an error.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "```suggestion\r\n            if not isinstance(count, (int, long)) or count < 1:\r\n```\r\npy2/3 compat",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "```suggestion\r\n            if not isinstance(block, (int, long)) or block < 0:\r\n```\r\npy2/3 compat",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "```suggestion\r\n            if not isinstance(count, (int, long)) or count < 1:\r\n```\r\npy2/3 compat",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "```suggestion\r\n        if not isinstance(min_idle_time, (int, long)) or min_idle_time < 0:\r\n```\r\npy2/3 compat",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "```suggestion\r\n                if not isinstance(param, (int, long)):\r\n```\r\npy2/3 compat",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "```suggestion\r\n                    raise RedisError(\"XCLAIM {0} must be a boolean\"\r\n```\r\npython2.6 doesn't support `string.format` interpolation without positional indexes.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "```suggestion\r\n                    raise RedisError(\"XCLAIM {0} must be an integer\"\r\n```\r\npython2.6 doesn't support `string.format` interpolation without positional indexes.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "I think your keys/values should be reversed. This seems like the keys would collide if someone specified both `idle` and `time` with the same value.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "Same as above, I think the keys/values should be reversed here.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 110,
+      "body": "For consistency, these can be moved to the group of int callbacks above (the same place `XLEN` already is)",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "```suggestion\r\n            pieces.append(Token.get_token('MAXLEN'))\r\n```\r\nUse `Token.get_token` to prevent literals from being encoded with odd encodings.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "```suggestion\r\n                pieces.append(Token.get_token('~'))\r\n```\r\nUse `Token.get_token` to prevent literals from being encoded with odd encodings.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "```suggestion\r\n            pieces.append(Token.get_token('COUNT'))\r\n```\r\nUse `Token.get_token` to prevent literals from being encoded with odd encodings.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "```suggestion\r\n            pieces.append(Token.get_token('COUNT'))\r\n```\r\nUse `Token.get_token` to prevent literals from being encoded with odd encodings.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "```suggestion\r\n            pieces.append(Token.get_token('BLOCK'))\r\n```\r\nUse `Token.get_token` to prevent literals from being encoded with odd encodings.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "```suggestion\r\n            pieces.append(Token.get_token('COUNT'))\r\n```\r\nUse `Token.get_token` to prevent literals from being encoded with odd encodings.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "```suggestion\r\n        pieces.append(Token.get_token('STREAMS'))\r\n```\r\nUse `Token.get_token` to prevent literals from being encoded with odd encodings.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "```suggestion\r\n        pieces = [Token.get_token('MAXLEN')]\r\n```\r\nUse `Token.get_token` to prevent literals from being encoded with odd encodings.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "```suggestion\r\n            pieces.append(Token.get_token('~'))\r\n```\r\nUse `Token.get_token` to prevent literals from being encoded with odd encodings.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "```suggestion\r\n        pieces = [Token.get_token('MAXLEN')]\r\n```\r\nUse `Token.get_token` to prevent literals from being encoded with odd encodings.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "```suggestion\r\n            pieces.append(Token.get_token('~'))\r\n```\r\nUse `Token.get_token` to prevent literals from being encoded with odd encodings.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "```suggestion\r\n        pieces = [Token.get_token('GROUP'), groupname, consumername]\r\n```\r\nUse `Token.get_token` to prevent literals from being encoded with odd encodings.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "```suggestion\r\n            pieces.append(Token.get_token('COUNT'))\r\n```\r\nUse `Token.get_token` to prevent literals from being encoded with odd encodings.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "```suggestion\r\n            pieces.append(Token.get_token('BLOCK'))\r\n```\r\nUse `Token.get_token` to prevent literals from being encoded with odd encodings.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "```suggestion\r\n        pieces.append(Token.get_token('STREAMS'))\r\n```\r\nUse `Token.get_token` to prevent literals from being encoded with odd encodings.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "```suggestion\r\n                pieces.append(Token.get_token(str(param)))\r\n```\r\nUse `Token.get_token` to prevent literals from being encoded with odd encodings.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "```suggestion\r\n                pieces.append(Token.get_token(param_name.upper()))\r\n```\r\nUse `Token.get_token` to prevent literals from being encoded with odd encodings.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "We need to supply the actual int values here in addition to the option names.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "I don't see why we need this callback as it's only returning the response. I think it can be removed and `XADD` can be omitted from the callback list.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "The `pairs_to_dict` callback already does the dict construction that we need. This can simply be:\r\n\r\n`return [(r[0], pairs_to_dict(r[1])) for r in response]`",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "```suggestion\r\n        result[nativestr(r[0])] = stream_list(r[1])\r\n```\r\nThe response type can vary based on the `decode_responses` flag. Use `nativestr` to only decode if we're dealing with `bytes` on py3 or `str` on py2",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "There are several options for the return structure of `multi_stream_list`:\r\n\r\n```python\r\n# a list of of 2-item stream/messages lists\r\n[\r\n    [\r\n        'stream-1',\r\n        [\r\n            [\r\n                '1540456647578-0',\r\n                {'key-1': 'value-1', 'key-2': 'value-2'}\r\n            ],\r",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "ok. changing it to \"fields\" and setting it as a must arg",
+      "user": "RoeyPrat"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "actually that is the int value. what i forgot to add was the param name...\r\nrenaming param to param_value, and adding param_name to pieces.",
+      "user": "RoeyPrat"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "XADD removing unnecessary stream_key parse function",
+      "user": "RoeyPrat"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "ok. stream_list should reuse pairs_to_dict",
+      "user": "RoeyPrat"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "ok.\r\nmulti_stream_list should use nativestr for compatibility",
+      "user": "RoeyPrat"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "ok. \r\nallow list based iterating on XREADGROUP results",
+      "user": "RoeyPrat"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 1,
+      "body": "To be more explicit, response callbacks can accept **options. These come from passing **kwargs to `execute_command`. In the `xtrim_range` function, you could pass a `parse_detail=True` to `execute_command`, then here say something like:\r\n\r\n```python\r\nif options.get('parse_detail', False):\r\n    retur",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 348,
+      "body": "The count=-1 is something I had been using, but it is not supported going forward I don't believe. See:\r\n\r\nhttps://github.com/antirez/redis/pull/5459#issuecomment-433929399",
+      "user": "coleifer"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 215,
+      "body": "Is it guaranteed that these will line up in earlier Python? Since dicts aren't *technically* ordered (at least until 3.7) it might be safer to be explicit here.\r\n\r\n```python\r\nkeys, values = zip(*streams.items())\r\n```",
+      "user": "coleifer"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 400,
+      "body": "The redis docs mention some of these parameters are more targeted towards internal usage:\r\n\r\n> The command has multiple options, however most are mainly for internal use in order to transfer the effects of XCLAIM or other commands to the AOF file and to propagate the same effects to the slaves, and ",
+      "user": "coleifer"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 215,
+      "body": "See https://docs.python.org/2/library/stdtypes.html#dict.items Specifically:\r\n\r\n\"If items(), keys(), values(), iteritems(), iterkeys(), and itervalues() are called with no intervening modifications to the dictionary, the lists will directly correspond.\"",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 215,
+      "body": "but ya, streams.items() seems better. I'll fix. thx.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 225,
+      "body": "There's a new option to make the streams, \"MKSTREAM\".\r\n\r\nWalrus impl for comparison:\r\n\r\n```python\r\n    def xgroup_create(self, key, group, id='$', mkstream=False):\r\n        \"\"\"\r\n        Create a consumer group.\r\n\r\n        :param key: stream key -- must exist before creating a group if\r\n            m",
+      "user": "coleifer"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 225,
+      "body": "Is this something in beta? I see no mention of it on https://redis.io/commands/xgroup",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 225,
+      "body": "https://github.com/antirez/redis/commit/cb27dd1a6",
+      "user": "coleifer"
+    },
+    {
+      "file": "redis/client.py",
+      "line": 225,
+      "body": "added the MKSTREAM option in ff3bbdf. Thanks for the heads up.",
+      "user": "andymccurdy"
+    }
+  ]
+}

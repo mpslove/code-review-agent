@@ -1,0 +1,144 @@
+# 🤖 AI Code Review Report (Multi-Round Voting)
+
+**Rounds**: 3 | **Min Consensus**: 2/3
+**Diff**: 20 files, +641 -42
+**Total Consensus Issues**: 8
+
+---
+
+### Performance Review (2 consensus)
+
+🔵 **[LOW]** `redis/client.py:245` — parse_recursive_dict 使用 pop(0) 导致 O(n²) 时间复杂度 `[2/3 rounds]`
+> 在函数 parse_recursive_dict 中，使用 `response.pop(0)` 每次移除列表第一个元素，该操作在 Python 列表中是 O(n) 的，导致整体循环变为 O(n²)。当 Redis 响应层级较深或数据量较大时，性能会显著退化。\n\n证据代码（redis/client.py 第245-251行）：\n```python\ndef parse_recursive_di
+<details><summary>💡 Suggestion</summary>
+
+```
+使用索引遍历替代 pop(0)，将复杂度降为 O(n)：
+```python
+def parse_recursive_dict(response):
+    if response is None:
+        return None
+    result = {}
+    i = 0
+    while i < len(response):
+        k = response[i]
+        v = response[i+1]
+        i += 2
+        if isinstance(v, list):
+            v = parse_recursive_dict(v)
+        result[k] = v
+    return result
+```
+```
+</details>
+
+🟡 **[MEDIUM]** `redis/client.py:240` — parse_recursive_dict 使用 list.pop(0) 导致 O(n²) 时间复杂度 `[1/3 rounds]`
+> parse_recursive_dict 函数通过 while response 循环和 response.pop(0) 逐个取出键值对。list.pop(0) 是 O(n) 操作，因为需要移动所有后续元素。如果响应列表较大（例如 XINFO STREAM 返回包含多个子字典的嵌套结构），会导致总体时间复杂度为 O(n²)，严重影响解析性能。\n\n证据：在 redis/client.py 第 2
+<details><summary>💡 Suggestion</summary>
+
+```
+使用索引迭代替代 pop(0)，将复杂度降低为 O(n)：
+```python
+def parse_recursive_dict(response):
+    if response is None:
+        return None
+    result = {}
+    for i in range(0, len(response), 2):
+        k = response[i]
+        v = response[i+1]
+        if isinstance(v, list):
+            v = parse_recursive_dict(v)
+        result[k] = v
+    return result
+```
+```
+</details>
+
+
+### Architecture Review (2 consensus)
+
+🟡 **[MEDIUM]** `redis/client.py:436` — StrictRedis类耦合过多职责，违反单一职责原则 `[1/3 rounds]`
+> StrictRedis类（原Redis类）承担了所有Redis命令的实现，包括基础命令、集合、有序集合、地理空间、Stream等。本次diff在第436行后新增了约300行Stream相关命令（xadd、xrange、xreadgroup等），进一步膨胀了该类。这违反了单一职责原则（SRP）：一个类应该只有一个引起变化的原因。所有命令的变更都会导致该类修改，增加维护难度。未来添加新命令类型或修改协
+<details><summary>💡 Suggestion</summary>
+
+```
+将命令按领域拆分为多个混入类（Mixin）或策略类，例如：
+- `StreamCommands`混入：`def xadd(...)`
+- `SortedSetCommands`混入：`def zadd(...)`
+- 在主类中继承这些混入。
+或使用组合模式，在命令执行时委托给对应的处理器。
+预期收益：降低类复杂度，提高模块内聚性，新命令添加时只需关注对应模块。
+```
+</details>
+
+🟠 **[HIGH]** `redis/client.py:1764` — 单一职责违反：StrictRedis类因直接嵌入Stream命令方法而过度膨胀 `[2/3 rounds]`
+> StrictRedis类在diff中新增了约270行的Stream命令实现（xadd, xrange, xrevrange, xlen, xread, xgroup_create, xgroup_destroy, xgroup_setid, xgroup_delconsumer, xinfo_stream, xinfo_consumers, xinfo_groups, xack, xdel, xt
+<details><summary>💡 Suggestion</summary>
+
+```
+将Stream相关命令抽取到独立的Mixin或模块中，例如新增`redis/stream.py`定义`StreamCommandsMixin`类包含所有Stream方法及其辅助解析函数（如stream_list, parse_xpending, parse_xread等），然后让`StrictRedis`通过多重继承获得这些功能。例如：
+```python
+class StrictRedis(StreamCommandsMixin, ...):
+    pass
+```
+这符合接口隔离原则，减少单一类的负担，提高代码可维护性和可测试性。
+```
+</details>
+
+
+### Style Review (4 consensus)
+
+🟡 **[MEDIUM]** `redis/client.py:235` — 缺少docstring的public函数 `[1/3 rounds]`
+> 新增的顶层函数 `stream_list`, `parse_recursive_dict`, `parse_list_of_recursive_dicts`, `parse_xclaim`, `parse_xread`, `parse_xpending`, `parse_range_xpending` 均为public函数（没有以下划线开头），但缺少docstring解释其用途、参数和返回值。\n
+<details><summary>💡 Suggestion</summary>
+
+```
+为每个函数添加docstring，描述其功能、参数类型及返回值。例如：
+```python
+def stream_list(response):
+    """Convert a raw stream response into a list of (id, dict) pairs.
+
+    Args:
+        response: raw response from Redis.
+
+    Returns:
+        list of tuples or None if response is None.
+    """
+```
+```
+</details>
+
+🟠 **[HIGH]** `redis/client.py:1951` — xclaim函数参数过多（9个参数） `[1/3 rounds]`
+> `xclaim` 方法拥有9个参数：`name, groupname, consumername, min_idle_time, message_ids, idle, time, retrycount, force, justid`，超出了推荐的5个上限。过多的参数会降低代码可读性和可维护性，增加调用出错风险。\n证据：\n- line 1951: `def xclaim(self, name, 
+<details><summary>💡 Suggestion</summary>
+
+```
+将可选参数封装为一个配置对象或使用 `**kwargs` 并内部解析。或者拆分为多个方法（如 `xclaim_with_idle`, `xclaim_with_time` 等）。建议最简方案：将可选参数打包为一个字典 `options`。
+```
+</details>
+
+🟡 **[MEDIUM]** `benchmarks/command_packer_benchmark.py:28` — 使用 `raise e` 丢失原始traceback `[1/3 rounds]`
+> 在 `send_packed_command` 方法的 `except` 块中将 `raise` 改成了 `raise e`，这会丢失原始的异常堆栈信息（在Python 3中会创建一个新的traceback），不利于调试。正确做法是使用不带参数的 `raise` 来重新抛出当前异常，保留完整上下文。\n证据：\n- line 28: `except Exception as e:`\n- line
+<details><summary>💡 Suggestion</summary>
+
+```
+将 `raise e` 恢复为 `raise`，以保留原始traceback。
+```python
+except Exception:
+    self.disconnect()
+    raise
+```
+```
+</details>
+
+🟡 **[MEDIUM]** `tests/test_commands.py:1704` — 重复的测试方法 `test_strict_xack` `[1/3 rounds]`
+> 文件中定义了两个名称完全相同的测试方法：`test_strict_xack`。第一个定义在 line 1638，第二个定义在 line 1704。这会导致后者覆盖前者，使得前一个测试永远不执行；同时如果不小心删除了其中一个，可能造成测试遗漏。\n证据：\n- line 1638: `def test_strict_xack(self, sr):`\n- line 1704: `def test_s
+<details><summary>💡 Suggestion</summary>
+
+```
+保留一个副本，删除另一个。如果两个测试意图不同，请为第二个方法重命名，例如 `test_strict_xack_empty_stream`。
+```
+</details>
+
+---
+*Generated by Multi-Round Voting Agent — 3 rounds per reviewer*

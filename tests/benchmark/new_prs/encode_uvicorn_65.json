@@ -1,0 +1,45 @@
+{
+  "repo": "encode/uvicorn",
+  "pr": 65,
+  "title": "Websocket support for new ASGI spec",
+  "additions": 390,
+  "deletions": 1,
+  "issues": [
+    {
+      "file": "uvicorn/protocols/websocket.py",
+      "line": 1,
+      "body": "`not not message_type  == 'websocket.close'`\r\n\r\n🤔",
+      "user": "lovelydinosaur"
+    },
+    {
+      "file": "uvicorn/protocols/websocket.py",
+      "line": 1,
+      "body": "`close = (message_type == 'websocket.close')` ?",
+      "user": "lovelydinosaur"
+    },
+    {
+      "file": "uvicorn/protocols/websocket.py",
+      "line": 1,
+      "body": "`not not` sounds like a JavaScript.\r\n\r\n```python\r\nclose = message_type == 'websocket.close'\r\n```\r\n\r\nThis is totally enough and there is no need for parenthesis.\r\n\r\n```python\r\n>>> message_type = 'websocket.close'\r\n>>> close = message_type == 'websocket.close'\r\n>>> close\r\nTrue\r\n```",
+      "user": "sirex"
+    },
+    {
+      "file": "uvicorn/protocols/websocket.py",
+      "line": 1,
+      "body": "Yes, tho possibly more readable with the explicit parenthesis. It's a bit hard to otherwise tell if it's intended to be like that otherwise, or an error.",
+      "user": "lovelydinosaur"
+    },
+    {
+      "file": "uvicorn/protocols/websocket.py",
+      "line": 1,
+      "body": "It's python, explicit parenthesis are not needed, for example, no one writes:\r\n\r\n```python\r\nif (condition):\r\n    ...\r\n```\r\n\r\nBut I guess need for explicit parenthesis comes from experience with other programming languages where parenthesis are required.\r\n\r\nNevermind.",
+      "user": "sirex"
+    },
+    {
+      "file": "uvicorn/protocols/websocket.py",
+      "line": 1,
+      "body": "I had initially just went with `not not` because I was replacing the `bool` call based on the information on this page https://wiki.python.org/moin/PythonSpeed, but it doesn't really matter here.",
+      "user": "jordaneremieff"
+    }
+  ]
+}

@@ -1,0 +1,334 @@
+diff --git a/uvicorn/importer.py b/uvicorn/importer.py
+index 5a3613002..3c5262948 100644
+--- a/uvicorn/importer.py
++++ b/uvicorn/importer.py
+@@ -20,7 +20,7 @@ def import_from_string(import_str):
+         module = importlib.import_module(module_str)
+     except ImportError as exc:
+         if exc.name != module_str:
+-            raise
++            raise exc from None
+         message = 'Could not import module "{module_str}".'
+         raise ImportFromStringError(message.format(module_str=module_str))
+ 
+@@ -28,7 +28,7 @@ def import_from_string(import_str):
+     try:
+         for attr_str in attrs_str.split("."):
+             instance = getattr(instance, attr_str)
+-    except AttributeError:
++    except AttributeError as exc:
+         message = 'Attribute "{attrs_str}" not found in module "{module_str}".'
+         raise ImportFromStringError(
+             message.format(attrs_str=attrs_str, module_str=module_str)
+diff --git a/uvicorn/lifespan.py b/uvicorn/lifespan.py
+index aa5386009..d86db6854 100644
+--- a/uvicorn/lifespan.py
++++ b/uvicorn/lifespan.py
+@@ -1,6 +1,5 @@
+ import asyncio
+ import logging
+-import traceback
+ 
+ 
+ STATE_TRANSITION_ERROR = 'Got invalid state transition on lifespan protocol.'
+@@ -16,7 +15,7 @@ def __init__(self, app, logger=None, startup_timeout=10, cleanup_timeout=10):
+         self.receive_queue = asyncio.Queue()
+         try:
+             self.asgi = app({'type': 'lifespan'})
+-        except:
++        except BaseException as exc:
+             self.asgi = None
+ 
+     @property
+@@ -27,10 +26,9 @@ async def run(self):
+         assert self.is_enabled
+         try:
+             await self.asgi(self.receive, self.send)
+-        except:
+-            msg = "Exception in 'lifespan' protocol\n%s"
+-            traceback_text = "".join(traceback.format_exc())
+-            self.logger.debug(msg, traceback_text)
++        except BaseException as exc:
++            msg = "Exception in 'lifespan' protocol\n"
++            self.logger.debug(msg, exc_info=exc)
+             self.asgi = None
+         finally:
+             self.startup_event.set()
+diff --git a/uvicorn/loops/auto.py b/uvicorn/loops/auto.py
+index 41ff9dda0..094c3072b 100644
+--- a/uvicorn/loops/auto.py
++++ b/uvicorn/loops/auto.py
+@@ -1,7 +1,7 @@
+ def auto_loop_setup():
+     try:
+         import uvloop
+-    except ImportError:  # pragma: no cover
++    except ImportError as exc:  # pragma: no cover
+         from uvicorn.loops.asyncio import asyncio_setup
+ 
+         return asyncio_setup()
+diff --git a/uvicorn/main.py b/uvicorn/main.py
+index 5119352c2..63d986fec 100644
+--- a/uvicorn/main.py
++++ b/uvicorn/main.py
+@@ -331,7 +331,7 @@ def set_signal_handlers(self):
+         try:
+             for sig in HANDLED_SIGNALS:
+                 self.loop.add_signal_handler(sig, self.handle_exit, sig, None)
+-        except NotImplementedError:
++        except NotImplementedError as exc:
+             # Windows
+             for sig in HANDLED_SIGNALS:
+                 signal.signal(sig, self.handle_exit)
+diff --git a/uvicorn/middleware/debug.py b/uvicorn/middleware/debug.py
+index 24a06ad8d..4be469c5d 100644
+--- a/uvicorn/middleware/debug.py
++++ b/uvicorn/middleware/debug.py
+@@ -78,9 +78,9 @@ async def __call__(self, receive, send):
+         try:
+             asgi = self.app(self.scope)
+             await asgi(receive, self.send)
+-        except:
++        except BaseException as exc:
+             if self.response_started:
+-                raise
++                raise exc from None
+             accept = get_accept_header(self.scope)
+             if "text/html" in accept:
+                 exc_html = html.escape(traceback.format_exc())
+@@ -93,7 +93,7 @@ async def __call__(self, receive, send):
+                 content = traceback.format_exc()
+                 response = PlainTextResponse(content, status_code=500)
+             await response(receive, send)
+-            raise
++            raise exc from None
+ 
+     async def send(self, message):
+         if message["type"] == "http.response.start":
+diff --git a/uvicorn/middleware/message_logger.py b/uvicorn/middleware/message_logger.py
+index a33736df3..135780706 100644
+--- a/uvicorn/middleware/message_logger.py
++++ b/uvicorn/middleware/message_logger.py
+@@ -45,10 +45,10 @@ def __init__(self, scope, app, logger, task_counter):
+         self.logger.debug(log_text, self.client_addr, self.task_counter, logged_scope)
+         try:
+             self.inner = app(scope)
+-        except:
++        except BaseException as exc:
+             log_text = '%s - ASGI [%d] Raised exception'
+             self.logger.debug(log_text, self.client_addr, self.task_counter)
+-            raise
++            raise exc from None
+ 
+     async def __call__(self, receive, send):
+         self._receive = receive
+@@ -57,10 +57,10 @@ async def __call__(self, receive, send):
+         self.logger.debug(log_text, self.client_addr, self.task_counter)
+         try:
+             await self.inner(self.receive, self.send)
+-        except:
++        except BaseException as exc:
+             log_text = '%s - ASGI [%d] Raised exception'
+             self.logger.debug(log_text, self.client_addr, self.task_counter)
+-            raise
++            raise exc from None
+         else:
+             log_text = '%s - ASGI [%d] Completed'
+             self.logger.debug(log_text, self.client_addr, self.task_counter)
+diff --git a/uvicorn/protocols/http/auto.py b/uvicorn/protocols/http/auto.py
+index 9a328d0ce..3f5dcd9d7 100644
+--- a/uvicorn/protocols/http/auto.py
++++ b/uvicorn/protocols/http/auto.py
+@@ -1,6 +1,6 @@
+ try:
+     import httptools
+-except ImportError:  # pragma: no cover
++except ImportError as exc:  # pragma: no cover
+     from uvicorn.protocols.http.h11_impl import H11Protocol
+ 
+     AutoHTTPProtocol = H11Protocol
+diff --git a/uvicorn/protocols/http/h11_impl.py b/uvicorn/protocols/http/h11_impl.py
+index 4ae09322c..91269d735 100644
+--- a/uvicorn/protocols/http/h11_impl.py
++++ b/uvicorn/protocols/http/h11_impl.py
+@@ -3,7 +3,6 @@
+ import http
+ import logging
+ import time
+-import traceback
+ from urllib.parse import unquote
+ from uvicorn.protocols.utils import get_local_addr, get_remote_addr, is_ssl
+ 
+@@ -19,7 +18,7 @@ def _get_default_headers():
+ def _get_status_phrase(status_code):
+     try:
+         return http.HTTPStatus(status_code).phrase.encode()
+-    except ValueError:
++    except ValueError as exc:
+         return b""
+ 
+ 
+@@ -156,7 +155,7 @@ def connection_lost(self, exc):
+             event = h11.ConnectionClosed()
+             try:
+                 self.conn.send(event)
+-            except h11.LocalProtocolError:
++            except h11.LocalProtocolError as exc:
+                 # Premature client disconnect
+                 pass
+ 
+@@ -177,7 +176,7 @@ def handle_events(self):
+         while True:
+             try:
+                 event = self.conn.next_event()
+-            except h11.RemoteProtocolError:
++            except h11.RemoteProtocolError as exc:
+                 msg = "Invalid HTTP request received."
+                 self.logger.warning(msg)
+                 self.transport.close()
+@@ -393,10 +392,9 @@ async def run_asgi(self, app):
+         try:
+             asgi = app(self.scope)
+             result = await asgi(self.receive, self.send)
+-        except:
+-            msg = "Exception in ASGI application\n%s"
+-            traceback_text = "".join(traceback.format_exc())
+-            self.logger.error(msg, traceback_text)
++        except BaseException as exc:
++            msg = "Exception in ASGI application\n"
++            self.logger.error(msg, exc_info=exc)
+             if not self.response_started:
+                 await self.send_500_response()
+             else:
+diff --git a/uvicorn/protocols/http/httptools_impl.py b/uvicorn/protocols/http/httptools_impl.py
+index 1f2dd5083..22a10d9b7 100644
+--- a/uvicorn/protocols/http/httptools_impl.py
++++ b/uvicorn/protocols/http/httptools_impl.py
+@@ -3,8 +3,6 @@
+ import http
+ import logging
+ import time
+-import traceback
+-from urllib.parse import unquote
+ from uvicorn.protocols.utils import get_local_addr, get_remote_addr, is_ssl
+ 
+ import httptools
+@@ -19,7 +17,7 @@ def _get_default_headers():
+ def _get_status_line(status_code):
+     try:
+         phrase = http.HTTPStatus(status_code).phrase.encode()
+-    except ValueError:
++    except ValueError as exc:
+         phrase = b""
+     return b"".join([b"HTTP/1.1 ", str(status_code).encode(), b" ", phrase, b"\r\n"])
+ 
+@@ -168,11 +166,11 @@ def data_received(self, data):
+ 
+         try:
+             self.parser.feed_data(data)
+-        except httptools.parser.errors.HttpParserError:
++        except httptools.parser.errors.HttpParserError as exc:
+             msg = "Invalid HTTP request received."
+             self.logger.warning(msg)
+             self.transport.close()
+-        except httptools.HttpParserUpgrade:
++        except httptools.HttpParserUpgrade as exc:
+             self.handle_upgrade()
+ 
+     def handle_upgrade(self):
+@@ -385,10 +383,9 @@ async def run_asgi(self, app):
+         try:
+             asgi = app(self.scope)
+             result = await asgi(self.receive, self.send)
+-        except:
+-            msg = "Exception in ASGI application\n%s"
+-            traceback_text = "".join(traceback.format_exc())
+-            self.logger.error(msg, traceback_text)
++        except BaseException as exc:
++            msg = "Exception in ASGI application\n"
++            self.logger.error(msg, exc_info=exc)
+             if not self.response_started:
+                 await self.send_500_response()
+             else:
+diff --git a/uvicorn/protocols/websockets/auto.py b/uvicorn/protocols/websockets/auto.py
+index b9bdaaf26..2e42d23df 100644
+--- a/uvicorn/protocols/websockets/auto.py
++++ b/uvicorn/protocols/websockets/auto.py
+@@ -1,9 +1,9 @@
+ try:
+     import websockets
+-except ImportError:  # pragma: no cover
++except ImportError as exc:  # pragma: no cover
+     try:
+         import wsproto
+-    except ImportError:
++    except ImportError as exc:
+         AutoWebSocketsProtocol = None
+     else:
+         from uvicorn.protocols.websockets.wsproto_impl import WSProtocol
+diff --git a/uvicorn/protocols/websockets/websockets_impl.py b/uvicorn/protocols/websockets/websockets_impl.py
+index e8a1688d4..8db7d2af6 100644
+--- a/uvicorn/protocols/websockets/websockets_impl.py
++++ b/uvicorn/protocols/websockets/websockets_impl.py
+@@ -3,7 +3,6 @@
+ import asyncio
+ import http
+ import logging
+-import traceback
+ import websockets
+ 
+ 
+@@ -139,11 +138,10 @@ async def run_asgi(self):
+         try:
+             asgi = self.app(self.scope)
+             result = await asgi(self.asgi_receive, self.asgi_send)
+-        except:
++        except BaseException as exc:
+             self.closed_event.set()
+-            msg = "Exception in ASGI application\n%s"
+-            traceback_text = "".join(traceback.format_exc())
+-            self.logger.error(msg, traceback_text)
++            msg = "Exception in ASGI application\n"
++            self.logger.error(msg, exc_info=exc)
+             if not self.handshake_started_event.is_set():
+                 self.send_500_response()
+             else:
+diff --git a/uvicorn/protocols/websockets/wsproto_impl.py b/uvicorn/protocols/websockets/wsproto_impl.py
+index e4bd9c9eb..57ab77241 100644
+--- a/uvicorn/protocols/websockets/wsproto_impl.py
++++ b/uvicorn/protocols/websockets/wsproto_impl.py
+@@ -3,7 +3,6 @@
+ import asyncio
+ import h11
+ import logging
+-import traceback
+ import wsproto.connection
+ import wsproto.events
+ import wsproto.extensions
+@@ -190,10 +189,9 @@ async def run_asgi(self):
+         try:
+             asgi = self.app(self.scope)
+             result = await asgi(self.receive, self.send)
+-        except:
+-            msg = "Exception in ASGI application\n%s"
+-            traceback_text = "".join(traceback.format_exc())
+-            self.logger.error(msg, traceback_text)
++        except BaseException as exc:
++            msg = "Exception in ASGI application\n"
++            self.logger.error(msg, exc_info=exc)
+             if not self.handshake_complete:
+                 self.send_500_response()
+             self.transport.close()
+diff --git a/uvicorn/reloaders/statreload.py b/uvicorn/reloaders/statreload.py
+index 87f5c1101..53d284968 100644
+--- a/uvicorn/reloaders/statreload.py
++++ b/uvicorn/reloaders/statreload.py
+@@ -51,7 +51,7 @@ def should_restart(self):
+         for filename in self.iter_py_files():
+             try:
+                 mtime = os.stat(filename).st_mtime
+-            except OSError:
++            except OSError as exc:
+                 continue
+ 
+             old_time = self.mtimes.get(filename)

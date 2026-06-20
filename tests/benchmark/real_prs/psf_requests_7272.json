@@ -1,0 +1,260 @@
+{
+  "repo": "psf/requests",
+  "pr": 7272,
+  "title": "Add inline types to Requests",
+  "description": "Add inline types to Requests",
+  "issues": [
+    {
+      "file": "src/requests/api.py",
+      "line": 1,
+      "body": "I know it would be a lot of work, but annotating the kwargs with an `Unpack[KwargsDict]` where `KwargsDict` is a `typing.TypedDict` would be great!\r\n\r\nI hacked this into my own code that interacts wit",
+      "user": "cthoyt",
+      "diff_hunk": "@@ -8,10 +8,20 @@\n :license: Apache2, see LICENSE for more details.\n \"\"\"\n \n+from __future__ import a"
+    },
+    {
+      "file": "src/requests/api.py",
+      "line": 1,
+      "body": "also I am willing to PR this if you think it's a good idea / if you think an external contrib is better/easier than doing it yourself",
+      "user": "cthoyt",
+      "diff_hunk": "@@ -8,10 +8,20 @@\n :license: Apache2, see LICENSE for more details.\n \"\"\"\n \n+from __future__ import a"
+    },
+    {
+      "file": "src/requests/_types.py",
+      "line": 81,
+      "body": "it would be lovely if these type hints were available through a \"public\" interface, since I've often written code that wraps a requests call, where I would want to use the ParamsType to annotate my ow",
+      "user": "cthoyt",
+      "diff_hunk": "@@ -0,0 +1,133 @@\n+\"\"\"\n+requests._types\n+~~~~~~~~~~~~~~~\n+\n+This module contains type aliases used i"
+    },
+    {
+      "file": "src/requests/api.py",
+      "line": 1,
+      "body": "Thanks for comment, @cthoyt! This is a good callout because it is a delta from typeshed that should've been in the overview.\n\nI played with Unpack for this but put that on pause because it got kind of",
+      "user": "nateprewitt",
+      "diff_hunk": "@@ -8,10 +8,20 @@\n :license: Apache2, see LICENSE for more details.\n \"\"\"\n \n+from __future__ import a"
+    },
+    {
+      "file": "src/requests/api.py",
+      "line": 1,
+      "body": "one thing worth noting is that you can have (multiple) inheritance on typed dicts. this can make it easier to factor out similarities between typed dict definitions for several functions\r\n",
+      "user": "cthoyt",
+      "diff_hunk": "@@ -8,10 +8,20 @@\n :license: Apache2, see LICENSE for more details.\n \"\"\"\n \n+from __future__ import a"
+    },
+    {
+      "file": "src/requests/_types.py",
+      "line": 81,
+      "body": "I agree having some form of public hints for the top-level APIs is potentially warranted. I started very conservative here because often times new code goes into Requests and immediately comes someone",
+      "user": "nateprewitt",
+      "diff_hunk": "@@ -0,0 +1,133 @@\n+\"\"\"\n+requests._types\n+~~~~~~~~~~~~~~~\n+\n+This module contains type aliases used i"
+    },
+    {
+      "file": "src/requests/_types.py",
+      "line": 81,
+      "body": "fair! thank you for doing this and considering carefully :)",
+      "user": "cthoyt",
+      "diff_hunk": "@@ -0,0 +1,133 @@\n+\"\"\"\n+requests._types\n+~~~~~~~~~~~~~~~\n+\n+This module contains type aliases used i"
+    },
+    {
+      "file": "src/requests/adapters.py",
+      "line": 379,
+      "body": "Should be addressed with https://github.com/urllib3/urllib3/pull/3799.",
+      "user": "nateprewitt",
+      "diff_hunk": "@@ -631,29 +683,29 @@ def send(\n         if isinstance(timeout, tuple):\n             try:\n          "
+    },
+    {
+      "file": ".github/workflows/typecheck.yml",
+      "line": 1,
+      "body": "You could consider using a version matrix here. This could flag removals, API changes, and deprecations in CPython's stdlib early. Maybe just using the oldest and latest CPython version supported by r",
+      "user": "srittau",
+      "diff_hunk": "@@ -0,0 +1,29 @@\n+name: Type Check\n+\n+on: [push, pull_request]\n+\n+permissions:\n+  contents: read\n+\n+"
+    },
+    {
+      "file": "src/requests/_types.py",
+      "line": 1,
+      "body": "You could consider conditionally using `io.Reader` when using Python 3.14+. It is nearly identically defined, with one difference (pos-only length argument) that I would suggest adding:\n\n```suggestion",
+      "user": "srittau",
+      "diff_hunk": "@@ -0,0 +1,133 @@\n+\"\"\"\n+requests._types\n+~~~~~~~~~~~~~~~\n+\n+This module contains type aliases used i"
+    },
+    {
+      "file": "src/requests/_types.py",
+      "line": 1,
+      "body": "Shouldn't these be marked as `TypeAlias`es?",
+      "user": "srittau",
+      "diff_hunk": "@@ -0,0 +1,133 @@\n+\"\"\"\n+requests._types\n+~~~~~~~~~~~~~~~\n+\n+This module contains type aliases used i"
+    },
+    {
+      "file": "src/requests/_types.py",
+      "line": 1,
+      "body": "Nit: `HookType` doesn't need to be quotes as it's defined before in this file.\n",
+      "user": "srittau",
+      "diff_hunk": "@@ -0,0 +1,133 @@\n+\"\"\"\n+requests._types\n+~~~~~~~~~~~~~~~\n+\n+This module contains type aliases used i"
+    },
+    {
+      "file": "src/requests/_types.py",
+      "line": 1,
+      "body": "Good callout, the Hook* types were originally at the bottom of the file, but got lifted just before I posted this.",
+      "user": "nateprewitt",
+      "diff_hunk": "@@ -0,0 +1,133 @@\n+\"\"\"\n+requests._types\n+~~~~~~~~~~~~~~~\n+\n+This module contains type aliases used i"
+    },
+    {
+      "file": "src/requests/_types.py",
+      "line": 1,
+      "body": "Yep, also a good call out. I'll get those added.",
+      "user": "nateprewitt",
+      "diff_hunk": "@@ -0,0 +1,133 @@\n+\"\"\"\n+requests._types\n+~~~~~~~~~~~~~~~\n+\n+This module contains type aliases used i"
+    },
+    {
+      "file": ".github/workflows/typecheck.yml",
+      "line": 1,
+      "body": "Yeah, that's fair. I started with the minimum because we've generally tested floors but I agree having something for the latest version also makes sense to catch breakages as we add support.",
+      "user": "nateprewitt",
+      "diff_hunk": "@@ -0,0 +1,29 @@\n+name: Type Check\n+\n+on: [push, pull_request]\n+\n+permissions:\n+  contents: read\n+\n+"
+    },
+    {
+      "file": "src/requests/api.py",
+      "line": 1,
+      "body": "@cthoyt I pushed up another pass at Unpack. Let me know if you're seeing any issues with your setup or have any other feedback. Appreciate it!",
+      "user": "nateprewitt",
+      "diff_hunk": "@@ -8,10 +8,20 @@\n :license: Apache2, see LICENSE for more details.\n \"\"\"\n \n+from __future__ import a"
+    },
+    {
+      "file": ".github/workflows/typecheck.yml",
+      "line": 1,
+      "body": "Addressed in 4a6d321f1fff6c7cd829cb4cfc60e54ef8a76b4b.",
+      "user": "nateprewitt",
+      "diff_hunk": "@@ -0,0 +1,29 @@\n+name: Type Check\n+\n+on: [push, pull_request]\n+\n+permissions:\n+  contents: read\n+\n+"
+    },
+    {
+      "file": "src/requests/_types.py",
+      "line": 1,
+      "body": "Addressed in https://github.com/psf/requests/pull/7272/commits/5c93c71069a65381a4722dda9df4210e6d381240.",
+      "user": "nateprewitt",
+      "diff_hunk": "@@ -0,0 +1,133 @@\n+\"\"\"\n+requests._types\n+~~~~~~~~~~~~~~~\n+\n+This module contains type aliases used i"
+    },
+    {
+      "file": "src/requests/_types.py",
+      "line": 1,
+      "body": "Addressed in [f651c9b](https://github.com/psf/requests/pull/7272/commits/f651c9b92d784bb0171939abbf5af778aafa2dc3).",
+      "user": "nateprewitt",
+      "diff_hunk": "@@ -0,0 +1,133 @@\n+\"\"\"\n+requests._types\n+~~~~~~~~~~~~~~~\n+\n+This module contains type aliases used i"
+    },
+    {
+      "file": "src/requests/_types.py",
+      "line": 1,
+      "body": "Addressed in [f651c9b](https://github.com/psf/requests/pull/7272/commits/f651c9b92d784bb0171939abbf5af778aafa2dc3).",
+      "user": "nateprewitt",
+      "diff_hunk": "@@ -0,0 +1,133 @@\n+\"\"\"\n+requests._types\n+~~~~~~~~~~~~~~~\n+\n+This module contains type aliases used i"
+    },
+    {
+      "file": "src/requests/structures.py",
+      "line": 1,
+      "body": "This seems a bit unrelated :thinking: ",
+      "user": "jorenham",
+      "diff_hunk": "@@ -37,63 +44,81 @@ class CaseInsensitiveDict(MutableMapping):\n     behavior is undefined.\n     \"\"\"\n"
+    },
+    {
+      "file": "src/requests/structures.py",
+      "line": 1,
+      "body": "It's actually required. I responded earlier on mobile about RequestsCookieJar but couldn't see the surrounding context. I had to go back and dig a bit because this was done during the first pass back ",
+      "user": "nateprewitt",
+      "diff_hunk": "@@ -37,63 +44,81 @@ class CaseInsensitiveDict(MutableMapping):\n     behavior is undefined.\n     \"\"\"\n"
+    },
+    {
+      "file": "src/requests/structures.py",
+      "line": 1,
+      "body": "I've made a small tweak to this in [fb56915](https://github.com/psf/requests/pull/7272/commits/fb56915c62230fc5e4880e3b576a6d734cd3db9b) and added tests in #7401. This did have some behavioral implica",
+      "user": "nateprewitt",
+      "diff_hunk": "@@ -37,63 +44,81 @@ class CaseInsensitiveDict(MutableMapping):\n     behavior is undefined.\n     \"\"\"\n"
+    },
+    {
+      "file": "src/requests/utils.py",
+      "line": 1,
+      "body": "```suggestion\n```",
+      "user": "nateprewitt",
+      "diff_hunk": "@@ -501,17 +542,18 @@ def get_encodings_from_content(content):\n     )\n \n \n-def _parse_content_type_h"
+    },
+    {
+      "file": ".github/workflows/typecheck.yml",
+      "line": 32,
+      "body": "Why pyright instead of mypy? I've found mypy verified types work fine with pyright but not vice-versa.",
+      "user": "sigmavirus24",
+      "diff_hunk": "@@ -0,0 +1,32 @@\n+name: Type Check\n+\n+on: [push, pull_request]\n+\n+permissions:\n+  contents: read\n+\n+"
+    },
+    {
+      "file": "src/requests/adapters.py",
+      "line": 1,
+      "body": "Importing these like this will make these \"public\" right? Should we just import `_types` and use the type aliases directly?",
+      "user": "sigmavirus24",
+      "diff_hunk": "@@ -57,16 +60,21 @@\n )\n \n try:\n-    from urllib3.contrib.socks import SOCKSProxyManager\n+    from ur"
+    },
+    {
+      "file": "src/requests/api.py",
+      "line": 1,
+      "body": "Same concern here as above in adapters.py",
+      "user": "sigmavirus24",
+      "diff_hunk": "@@ -8,10 +8,28 @@\n :license: Apache2, see LICENSE for more details.\n \"\"\"\n \n-from . import sessions\n+"
+    },
+    {
+      "file": "src/requests/api.py",
+      "line": 1,
+      "body": "Is this the best way to do this? Would it be better to just do overrides? The permutations are probably too many given the ridiculous number of parameters to these functions",
+      "user": "sigmavirus24",
+      "diff_hunk": "@@ -100,7 +120,12 @@ def head(url, **kwargs):\n     return request(\"head\", url, **kwargs)\n \n \n-def po"
+    },
+    {
+      "file": "src/requests/auth.py",
+      "line": 1,
+      "body": "`object` or `Any`? ",
+      "user": "sigmavirus24",
+      "diff_hunk": "@@ -302,13 +341,13 @@ def __call__(self, r):\n \n         return r\n \n-    def __eq__(self, other):\n+  "
+    },
+    {
+      "file": ".github/workflows/typecheck.yml",
+      "line": 32,
+      "body": "We could use mypy (or make sure we're fully mypy compliant as well). The first pass at this in 2022, mypy struggled with the \"magic\" behaviors of Requests. The public API is currently mypy compatible ",
+      "user": "nateprewitt",
+      "diff_hunk": "@@ -0,0 +1,32 @@\n+name: Type Check\n+\n+on: [push, pull_request]\n+\n+permissions:\n+  contents: read\n+\n+"
+    },
+    {
+      "file": "src/requests/adapters.py",
+      "line": 1,
+      "body": "That's a good callout. I don't think they get re-exported in `from requests.adapters import *` but `_types.foo` is probably clearer.",
+      "user": "nateprewitt",
+      "diff_hunk": "@@ -57,16 +60,21 @@\n )\n \n try:\n-    from urllib3.contrib.socks import SOCKSProxyManager\n+    from ur"
+    },
+    {
+      "file": "src/requests/api.py",
+      "line": 1,
+      "body": "I'm not sure if overrides would help for this case. I'd originally left this as `Any` to keep the API unchanged. Both @cthoyt and @srittau called this out as a deviation from typeshed. Unpack gives us",
+      "user": "nateprewitt",
+      "diff_hunk": "@@ -100,7 +120,12 @@ def head(url, **kwargs):\n     return request(\"head\", url, **kwargs)\n \n \n-def po"
+    },
+    {
+      "file": "src/requests/adapters.py",
+      "line": 1,
+      "body": "Addressed in [b594765](https://github.com/psf/requests/pull/7272/commits/b594765458375743d843e686607d29521e5f488c).",
+      "user": "nateprewitt",
+      "diff_hunk": "@@ -57,16 +60,21 @@\n )\n \n try:\n-    from urllib3.contrib.socks import SOCKSProxyManager\n+    from ur"
+    },
+    {
+      "file": "src/requests/api.py",
+      "line": 1,
+      "body": "Addressed in [b594765](https://github.com/psf/requests/pull/7272/commits/b594765458375743d843e686607d29521e5f488c).",
+      "user": "nateprewitt",
+      "diff_hunk": "@@ -8,10 +8,28 @@\n :license: Apache2, see LICENSE for more details.\n \"\"\"\n \n-from . import sessions\n+"
+    },
+    {
+      "file": "src/requests/auth.py",
+      "line": 1,
+      "body": "Fixed in [4cf9bb5](https://github.com/psf/requests/pull/7272/commits/4cf9bb5cb159ad54165e1808666154a7509da4e6).",
+      "user": "nateprewitt",
+      "diff_hunk": "@@ -302,13 +341,13 @@ def __call__(self, r):\n \n         return r\n \n-    def __eq__(self, other):\n+  "
+    },
+    {
+      "file": "src/requests/_types.py",
+      "line": 81,
+      "body": "Just to put a final decision here, everything is being shipped behind a `_t.` prefix for 2.34.0. The types have been tested across a number of downstream projects successfully and we're confident in t",
+      "user": "nateprewitt",
+      "diff_hunk": "@@ -0,0 +1,133 @@\n+\"\"\"\n+requests._types\n+~~~~~~~~~~~~~~~\n+\n+This module contains type aliases used i"
+    }
+  ]
+}

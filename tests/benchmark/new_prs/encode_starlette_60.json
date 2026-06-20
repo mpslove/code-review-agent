@@ -1,0 +1,183 @@
+{
+  "repo": "encode/starlette",
+  "pr": 60,
+  "title": "Missing annotations added datastructures & requests modules",
+  "additions": 54,
+  "deletions": 51,
+  "issues": [
+    {
+      "file": "starlette/requests.py",
+      "line": 1,
+      "body": "Should this just be `-> typing.AsyncGenerator[bytes]` ?",
+      "user": "lovelydinosaur"
+    },
+    {
+      "file": "starlette/requests.py",
+      "line": 1,
+      "body": "I think we should probably drop `JSONType` and just use `Any`.\r\n(Since the type system can't deal with the recursive type definition anyways)",
+      "user": "lovelydinosaur"
+    },
+    {
+      "file": "starlette/datastructures.py",
+      "line": 1,
+      "body": "Should we drop `\"type: ignore\" here?",
+      "user": "lovelydinosaur"
+    },
+    {
+      "file": "starlette/datastructures.py",
+      "line": 1,
+      "body": "Just `other: typing.Any` here is fine.",
+      "user": "lovelydinosaur"
+    },
+    {
+      "file": "starlette/datastructures.py",
+      "line": 1,
+      "body": "`raw_headers` is an (optional) list of two-tuples of `byte`, `byte`.\r\n",
+      "user": "lovelydinosaur"
+    },
+    {
+      "file": "starlette/datastructures.py",
+      "line": 156,
+      "body": "Can we drop the `type: ignore` here?",
+      "user": "lovelydinosaur"
+    },
+    {
+      "file": "starlette/datastructures.py",
+      "line": 152,
+      "body": "Can we drop the `type: ignore` here?",
+      "user": "lovelydinosaur"
+    },
+    {
+      "file": "starlette/datastructures.py",
+      "line": 160,
+      "body": "Can we drop the `type: ignore` here?",
+      "user": "lovelydinosaur"
+    },
+    {
+      "file": "starlette/datastructures.py",
+      "line": 1,
+      "body": "I guess `default` should be an Optional string here. (Tho just use `default: str = None` for the annotation, since that'll indicate it as optional anyways)\r\n\r\nAlso the return type of the function will be `typing.Optional[str]`.",
+      "user": "lovelydinosaur"
+    },
+    {
+      "file": "starlette/datastructures.py",
+      "line": 1,
+      "body": "I think we ought to be able to drop this once the type changes in the method signature are made.",
+      "user": "lovelydinosaur"
+    },
+    {
+      "file": "starlette/datastructures.py",
+      "line": 1,
+      "body": "I think `str` rather than `typing.Any`?",
+      "user": "lovelydinosaur"
+    },
+    {
+      "file": "starlette/datastructures.py",
+      "line": 1,
+      "body": "I think `str` rather than `typing.Any`?",
+      "user": "lovelydinosaur"
+    },
+    {
+      "file": "starlette/datastructures.py",
+      "line": 188,
+      "body": "Same again - the keys are strings - it oughta indicate incorrect usage if a different type is used as the key, right?",
+      "user": "lovelydinosaur"
+    },
+    {
+      "file": "starlette/datastructures.py",
+      "line": 1,
+      "body": "Just `other: typing.Any` is fine here. It's redundant to have a union of Any with another type.",
+      "user": "lovelydinosaur"
+    },
+    {
+      "file": "starlette/datastructures.py",
+      "line": 1,
+      "body": "Use `typing.Optional[int]` for these kind of signatures.",
+      "user": "lovelydinosaur"
+    },
+    {
+      "file": "starlette/requests.py",
+      "line": 1,
+      "body": "We have `Scope`, `Receive` etc. defined in `types.py` I guess import and use those.",
+      "user": "lovelydinosaur"
+    },
+    {
+      "file": "starlette/requests.py",
+      "line": 1,
+      "body": "I'm happy with just `typing.Any` here, since we can't properly type json anyways.",
+      "user": "lovelydinosaur"
+    },
+    {
+      "file": "starlette/requests.py",
+      "line": 1,
+      "body": "yes, should be `-> typing.AsyncGenerator[bytes, None]`",
+      "user": "marcosschroh"
+    },
+    {
+      "file": "starlette/requests.py",
+      "line": 1,
+      "body": "yes, cool! I didn't realize that!! Thanks",
+      "user": "marcosschroh"
+    },
+    {
+      "file": "starlette/datastructures.py",
+      "line": 188,
+      "body": "yes, the key should be a string. The thing is when I set `key: string` I have the following errors:\r\n\r\n```\r\nerror: Argument 1 of \"__contains__\" incompatible with supertype \"Mapping\"\r\nerror: Argument 1 of \"__contains__\" incompatible with supertype \"Container\"\r\n```\r\n\r\nWhat I understand is that I have ",
+      "user": "marcosschroh"
+    },
+    {
+      "file": "starlette/datastructures.py",
+      "line": 188,
+      "body": "Okay, Ive bumped into that before - that's tedious.\r\n\r\nI expect that there may be more correct ways to deal with it by eg. subclassing a generic type, but I'm not sure. Personally I think we should consider just switching off mypy's \"incompatible with supertype\" errors. We're doing a perfectly corre",
+      "user": "lovelydinosaur"
+    },
+    {
+      "file": "starlette/datastructures.py",
+      "line": 188,
+      "body": "Yes, I was expecting the same. I am using `mypy starlette --disallow-untyped-defs`, the same that is described on the #7 \r\n\r\nMostly all errors are related with `incompatible with supertype` on `datastructure.py`. \r\nI've finished with all the corrections in `requests.py`. \r\n\r\nYes, after all the annot",
+      "user": "marcosschroh"
+    },
+    {
+      "file": "starlette/datastructures.py",
+      "line": 188,
+      "body": "I asked about it and whether there is a flag to switching off mypy's \" incompatible with supertype\" errors on `mypy`. The answer was: \r\n\r\n`There is no global flag for this, because Liskov principle is like one of cornerstones of the type system. You can silence the error by # type: ignore of course.",
+      "user": "marcosschroh"
+    },
+    {
+      "file": "starlette/datastructures.py",
+      "line": 188,
+      "body": "Okay, sticking with `typing.Any` there make sense 👍",
+      "user": "lovelydinosaur"
+    },
+    {
+      "file": "starlette/datastructures.py",
+      "line": 1,
+      "body": "Ok, cool. I will define the type `BytesPairs = typing.List[typing.Tuple[bytes, bytes]]`",
+      "user": "marcosschroh"
+    },
+    {
+      "file": "starlette/datastructures.py",
+      "line": 1,
+      "body": "We need to define the type, otherwise we have `error: Need type annotation for '_list'`\r\n\r\nIn this case should be: `self._list = []  # type: BytesPairs`",
+      "user": "marcosschroh"
+    },
+    {
+      "file": "starlette/datastructures.py",
+      "line": 1,
+      "body": "Here we have the same problem as before if we use `typing.Optional[str]` for `default` (`incompatible with supertype`) . We should use `typing.Any`. On other hand, `key` should be `str` I guess.",
+      "user": "marcosschroh"
+    },
+    {
+      "file": "starlette/datastructures.py",
+      "line": 160,
+      "body": "We can't. If we remove it we have ` Return type of \"items\" incompatible with supertype \"Mapping\"`. Anyway, if the returned value is different from `StrPairs`  `Incompatible return value type` error is raised.",
+      "user": "marcosschroh"
+    },
+    {
+      "file": "starlette/datastructures.py",
+      "line": 1,
+      "body": "If we drop `type: ignore` we have `Signature of \"replace\" incompatible with supertype \"str\"`. I think is a good idea to keep it. If the returned value type is different from `URL`, the error ` Incompatible return value type`is raised.",
+      "user": "marcosschroh"
+    }
+  ]
+}

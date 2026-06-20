@@ -1,0 +1,33 @@
+{
+  "repo": "aio-libs/aiohttp",
+  "pr": 98,
+  "title": "Refactor client response decoding",
+  "additions": 175,
+  "deletions": 47,
+  "issues": [
+    {
+      "file": "aiohttp/client.py",
+      "line": 1,
+      "body": "1. Please try to use encoding from _Content-Type_ _charset_ if specified.\n2. Please support _encoding_ keyword-only method argument for overriding json encoding.\n",
+      "user": "asvetlov"
+    },
+    {
+      "file": "aiohttp/client.py",
+      "line": 1,
+      "body": "> Please support encoding keyword-only method argument for overriding json encoding.\n\nI'm afraid, this isn't actual any more:\nhttps://docs.python.org/3/library/json.html#json.loads\n\n> The other arguments have the same meaning as in load(), except encoding which is ignored and deprecated.\n",
+      "user": "kxepal"
+    },
+    {
+      "file": "aiohttp/client.py",
+      "line": 1,
+      "body": "I mean \n\n```\n return json.loads(self._content.decode(encoding)) \n```\n\nnot \n\n```\nreturn json.loads(self._content.decode('utf-8'), encoding)\n```\n",
+      "user": "asvetlov"
+    },
+    {
+      "file": "aiohttp/client.py",
+      "line": 1,
+      "body": "`encoding` passes as `response.json(encoding='utf-8')` and overrides defined in `Content-Type` header, correct?\n",
+      "user": "kxepal"
+    }
+  ]
+}

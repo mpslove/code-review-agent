@@ -1,0 +1,132 @@
+diff --git a/httpx/middleware/redirect.py b/httpx/middleware/redirect.py
+index 6f5c02e386..e093bf409f 100644
+--- a/httpx/middleware/redirect.py
++++ b/httpx/middleware/redirect.py
+@@ -51,7 +51,6 @@ def build_redirect_request(
+         headers = self.redirect_headers(request, url, method)  # TODO: merge headers?
+         content = self.redirect_content(request, method)
+         cookies = Cookies(self.cookies)
+-        cookies.update(request.cookies)
+         return AsyncRequest(
+             method=method, url=url, headers=headers, data=content, cookies=cookies
+         )
+@@ -115,6 +114,11 @@ def redirect_headers(self, request: AsyncRequest, url: URL, method: str) -> Head
+             # are only relevant to the request body.
+             headers.pop("Content-Length", None)
+             headers.pop("Transfer-Encoding", None)
++
++        # We should use the client cookie store to determine any cookie header,
++        # rather than whatever was on the original outgoing request.
++        headers.pop("Cookie", None)
++
+         return headers
+ 
+     def redirect_content(self, request: AsyncRequest, method: str) -> bytes:
+diff --git a/noxfile.py b/noxfile.py
+index ef524ebbf3..43494b565f 100644
+--- a/noxfile.py
++++ b/noxfile.py
+@@ -24,14 +24,7 @@ def lint(session):
+ @nox.session
+ def check(session):
+     session.install(
+-        "--upgrade",
+-        "black",
+-        "flake8",
+-        "flake8-bugbear",
+-        "flake8-comprehensions",
+-        "flake8-pie",
+-        "isort",
+-        "mypy",
++        "--upgrade", "black", "flake8", "flake8-bugbear", "flake8-pie", "isort", "mypy"
+     )
+ 
+     session.run("black", "--check", "--diff", "--target-version=py36", *source_files)
+diff --git a/test-requirements.txt b/test-requirements.txt
+index 7aa572c76f..96437e0c3d 100644
+--- a/test-requirements.txt
++++ b/test-requirements.txt
+@@ -6,7 +6,6 @@ brotlipy==0.7.*
+ cryptography
+ flake8
+ flake8-bugbear
+-flake8-comprehensions
+ flake8-pie
+ isort
+ mypy
+diff --git a/tests/client/test_redirects.py b/tests/client/test_redirects.py
+index d732ce421a..b014b0f161 100644
+--- a/tests/client/test_redirects.py
++++ b/tests/client/test_redirects.py
+@@ -290,3 +290,71 @@ async def test_cross_subdomain_redirect(backend):
+     url = "https://example.com/cross_subdomain"
+     response = await client.get(url)
+     assert response.url == URL("https://www.example.org/cross_subdomain")
++
++
++class MockCookieDispatch(AsyncDispatcher):
++    async def send(
++        self,
++        request: AsyncRequest,
++        verify: VerifyTypes = None,
++        cert: CertTypes = None,
++        timeout: TimeoutTypes = None,
++    ) -> AsyncResponse:
++        if request.url.path == "/":
++            if "cookie" in request.headers:
++                content = b"Logged in"
++            else:
++                content = b"Not logged in"
++            return AsyncResponse(codes.OK, content=content, request=request)
++
++        elif request.url.path == "/login":
++            status_code = codes.SEE_OTHER
++            headers = {
++                "location": "/",
++                "set-cookie": (
++                    "session=eyJ1c2VybmFtZSI6ICJ0b21; path=/; Max-Age=1209600; "
++                    "httponly; samesite=lax"
++                ),
++            }
++
++            return AsyncResponse(status_code, headers=headers, request=request)
++
++        elif request.url.path == "/logout":
++            status_code = codes.SEE_OTHER
++            headers = {
++                "location": "/",
++                "set-cookie": (
++                    "session=null; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; "
++                    "httponly; samesite=lax"
++                ),
++            }
++            return AsyncResponse(status_code, headers=headers, request=request)
++
++
++async def test_redirect_cookie_behavior(backend):
++    client = AsyncClient(dispatch=MockCookieDispatch(), backend=backend)
++
++    # The client is not logged in.
++    response = await client.get("https://example.com/")
++    assert response.url == "https://example.com/"
++    assert response.text == "Not logged in"
++
++    # Login redirects to the homepage, setting a session cookie.
++    response = await client.post("https://example.com/login")
++    assert response.url == "https://example.com/"
++    assert response.text == "Logged in"
++
++    # The client is logged in.
++    response = await client.get("https://example.com/")
++    assert response.url == "https://example.com/"
++    assert response.text == "Logged in"
++
++    # Logout redirects to the homepage, expiring the session cookie.
++    response = await client.post("https://example.com/logout")
++    assert response.url == "https://example.com/"
++    assert response.text == "Not logged in"
++
++    # The client is not logged in.
++    response = await client.get("https://example.com/")
++    assert response.url == "https://example.com/"
++    assert response.text == "Not logged in"

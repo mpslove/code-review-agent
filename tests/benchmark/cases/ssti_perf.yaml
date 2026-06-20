@@ -1,0 +1,16 @@
+name: "SSTI + heavy computation in app module"
+diff_file: "tests/fixtures/ssti_perf.diff"
+expected:
+  security:
+    - file: "src/app.py"
+      line_start: 7
+      severity: "critical"
+      title_contains: "SSTI"
+  performance:
+    - file: "src/app.py"
+      line_start: 24
+      title_contains: "O"
+  style:
+    - file: "src/app.py"
+      line_start: 32
+      title_contains: "未使用"

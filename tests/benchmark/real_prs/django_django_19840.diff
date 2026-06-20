@@ -1,0 +1,194 @@
+diff --git a/django/core/cache/backends/base.py b/django/core/cache/backends/base.py
+index f1b731aee1f3..67f31d9ac873 100644
+--- a/django/core/cache/backends/base.py
++++ b/django/core/cache/backends/base.py
+@@ -208,6 +208,10 @@ def get_many(self, keys, version=None):
+ 
+     async def aget_many(self, keys, version=None):
+         """See get_many()."""
++        if self.get_many.__func__ is not BaseCache.get_many:
++            return await sync_to_async(self.get_many, thread_sensitive=True)(
++                keys, version=version
++            )
+         d = {}
+         for k in keys:
+             val = await self.aget(k, self._missing_key, version=version)
+@@ -236,6 +240,10 @@ def get_or_set(self, key, default, timeout=DEFAULT_TIMEOUT, version=None):
+ 
+     async def aget_or_set(self, key, default, timeout=DEFAULT_TIMEOUT, version=None):
+         """See get_or_set()."""
++        if self.get_or_set.__func__ is not BaseCache.get_or_set:
++            return await sync_to_async(self.get_or_set, thread_sensitive=True)(
++                key, default, timeout=timeout, version=version
++            )
+         val = await self.aget(key, self._missing_key, version=version)
+         if val is self._missing_key:
+             if callable(default):
+@@ -255,6 +263,10 @@ def has_key(self, key, version=None):
+         )
+ 
+     async def ahas_key(self, key, version=None):
++        if self.has_key.__func__ is not BaseCache.has_key:
++            return await sync_to_async(self.has_key, thread_sensitive=True)(
++                key, version=version
++            )
+         return (
+             await self.aget(key, self._missing_key, version=version)
+             is not self._missing_key
+@@ -274,6 +286,10 @@ def incr(self, key, delta=1, version=None):
+ 
+     async def aincr(self, key, delta=1, version=None):
+         """See incr()."""
++        if self.incr.__func__ is not BaseCache.incr:
++            return await sync_to_async(self.incr, thread_sensitive=True)(
++                key, delta=delta, version=version
++            )
+         value = await self.aget(key, self._missing_key, version=version)
+         if value is self._missing_key:
+             raise ValueError("Key '%s' not found" % key)
+@@ -317,6 +333,10 @@ def set_many(self, data, timeout=DEFAULT_TIMEOUT, version=None):
+         return []
+ 
+     async def aset_many(self, data, timeout=DEFAULT_TIMEOUT, version=None):
++        if self.set_many.__func__ is not BaseCache.set_many:
++            return await sync_to_async(self.set_many, thread_sensitive=True)(
++                data, timeout=timeout, version=version
++            )
+         for key, value in data.items():
+             await self.aset(key, value, timeout=timeout, version=version)
+         return []
+@@ -331,6 +351,10 @@ def delete_many(self, keys, version=None):
+             self.delete(key, version=version)
+ 
+     async def adelete_many(self, keys, version=None):
++        if self.delete_many.__func__ is not BaseCache.delete_many:
++            return await sync_to_async(self.delete_many, thread_sensitive=True)(
++                keys, version=version
++            )
+         for key in keys:
+             await self.adelete(key, version=version)
+ 
+@@ -361,6 +385,10 @@ def incr_version(self, key, delta=1, version=None):
+ 
+     async def aincr_version(self, key, delta=1, version=None):
+         """See incr_version()."""
++        if self.incr_version.__func__ is not BaseCache.incr_version:
++            return await sync_to_async(self.incr_version, thread_sensitive=True)(
++                key, delta=delta, version=version
++            )
+         if version is None:
+             version = self.version
+ 
+@@ -387,7 +415,7 @@ def close(self, **kwargs):
+         pass
+ 
+     async def aclose(self, **kwargs):
+-        pass
++        return await sync_to_async(self.close, thread_sensitive=True)(**kwargs)
+ 
+ 
+ memcached_error_chars_re = _lazy_re_compile(r"[\x00-\x20\x7f]")
+diff --git a/tests/cache/tests.py b/tests/cache/tests.py
+index c4cf0a84e3a9..db5df2070124 100644
+--- a/tests/cache/tests.py
++++ b/tests/cache/tests.py
+@@ -25,7 +25,7 @@
+     cache,
+     caches,
+ )
+-from django.core.cache.backends.base import InvalidCacheBackendError
++from django.core.cache.backends.base import BaseCache, InvalidCacheBackendError
+ from django.core.cache.backends.redis import RedisCacheClient
+ from django.core.cache.utils import make_template_fragment_key
+ from django.db import close_old_connections, connection, connections
+@@ -1165,6 +1165,90 @@ def test_get_or_set_racing(self):
+             cache_add.return_value = False
+             self.assertEqual(cache.get_or_set("key", "default"), "default")
+ 
++    async def test_get_many_async_uses_specialized_implementation(self):
++        if (
++            cache.get_many.__func__ is not BaseCache.get_many
++            and cache.aget_many.__func__ is BaseCache.aget_many
++        ):
++            with mock.patch.object(cache, "get_many") as mocked:
++                mocked.__func__ = lambda x: x
++                await cache.aget_many({})
++                mocked.assert_called_once()
++
++    async def test_set_many_async_uses_specialized_implementation(self):
++        if (
++            cache.set_many.__func__ is not BaseCache.set_many
++            and cache.aset_many.__func__ is BaseCache.aset_many
++        ):
++            with mock.patch.object(cache, "set_many") as mocked:
++                mocked.__func__ = lambda x: x
++                await cache.aset_many({})
++                mocked.assert_called_once()
++
++    async def test_delete_many_async_uses_specialized_implementation(self):
++        if (
++            cache.delete_many.__func__ is not BaseCache.delete_many
++            and cache.adelete_many.__func__ is BaseCache.adelete_many
++        ):
++            with mock.patch.object(cache, "delete_many") as mocked:
++                mocked.__func__ = lambda x: x
++                await cache.adelete_many({})
++                mocked.assert_called_once()
++
++    async def test_get_or_set_async_uses_specialized_implementation(self):
++        await cache.aset("key", "value")
++        if (
++            cache.get_or_set.__func__ is not BaseCache.get_or_set
++            and cache.aget_or_set.__func__ is BaseCache.aget_or_set
++        ):
++            with mock.patch.object(cache, "get_or_set") as mocked:
++                mocked.__func__ = lambda x: x
++                await cache.aget_or_set("key")
++                mocked.assert_called_once()
++
++    async def test_has_key_async_uses_specialized_implementation(self):
++        await cache.aset("key", "value")
++        if (
++            cache.has_key.__func__ is not BaseCache.has_key
++            and cache.ahas_key.__func__ is BaseCache.ahas_key
++        ):
++            with mock.patch.object(cache, "has_key") as mocked:
++                mocked.__func__ = lambda x: x
++                await cache.ahas_key("key")
++                mocked.assert_called_once()
++
++    async def test_incr_async_uses_specialized_implementation(self):
++        await cache.aset("key", 1)
++        if (
++            cache.incr.__func__ is not BaseCache.incr
++            and cache.aincr.__func__ is BaseCache.aincr
++        ):
++            with mock.patch.object(cache, "incr") as mocked:
++                mocked.__func__ = lambda x: x
++                await cache.aincr("key")
++                mocked.assert_called_once()
++
++    async def test_incr_version_async_uses_specialized_implementation(self):
++        await cache.aset("key", "value", version=1)
++        if (
++            cache.incr_version.__func__ is not BaseCache.incr_version
++            and cache.aincr_version.__func__ is BaseCache.aincr_version
++        ):
++            with mock.patch.object(cache, "incr_version") as mocked:
++                mocked.__func__ = lambda x: x
++                await cache.aincr_version("key")
++                mocked.assert_called_once()
++
++    async def test_close_async_uses_specialized_implementation(self):
++        if (
++            cache.close.__func__ is not BaseCache.close
++            and cache.aclose.__func__ is BaseCache.aclose
++        ):
++            with mock.patch.object(cache, "close") as mocked:
++                mocked.__func__ = lambda x: x
++                await cache.aclose()
++                mocked.assert_called_once()
++
+ 
+ @override_settings(
+     CACHES=caches_setting_for_tests(

@@ -1,0 +1,169 @@
+{
+  "repo": "encode/httpx",
+  "pr": 153,
+  "title": "Fix bug in calculating maximum frame size",
+  "description": "Fix max frame size bug",
+  "issues": [
+    {
+      "file": "httpx/dispatch/http2.py",
+      "line": 1,
+      "body": "I believe this be `self.backend.create_event`, is that right @florimondmanca?",
+      "user": "yeraydiazdiaz",
+      "diff_hunk": "@@ -42,6 +44,7 @@ def __init__(\n \n         self.events[stream_id] = []\n         self.timeout_flags[stream_id] = TimeoutFlag()\n+        self.window_upd"
+    },
+    {
+      "file": "httpx/dispatch/http2.py",
+      "line": 1,
+      "body": "Correct! We should use methods on the backend instead of calling asyncio operations directly. :)",
+      "user": "florimondmanca",
+      "diff_hunk": "@@ -42,6 +44,7 @@ def __init__(\n \n         self.events[stream_id] = []\n         self.timeout_flags[stream_id] = TimeoutFlag()\n+        self.window_upd"
+    },
+    {
+      "file": "httpx/dispatch/http2.py",
+      "line": 1,
+      "body": "Instead of the section here I think we can use `self.h2_state.acknowledge_received_data(event.flow_controlled_length, stream_id)`?\r\n\r\nWe don't need anything beyond the `h2_state.streams[stream_id].open`, it's all handled by `acknowledge_received_data()`.",
+      "user": "sethmlarson",
+      "diff_hunk": "@@ -158,6 +159,17 @@ def initiate_connection(self) -> None:\n             if isinstance(event, h2.events.DataReceived):\n                 self.h2_state."
+    },
+    {
+      "file": "httpx/dispatch/http2.py",
+      "line": 1,
+      "body": "We should revert this change",
+      "user": "sethmlarson",
+      "diff_hunk": "@@ -139,16 +142,14 @@ def initiate_connection(self) -> None:\n             # read timeouts, if we haven't already.\n             self.timeout_flags[stre"
+    },
+    {
+      "file": "httpx/dispatch/http2.py",
+      "line": 1,
+      "body": "Is there any reason why we're doing `h2_state.max_outbound_frame_size - 1`?",
+      "user": "sethmlarson",
+      "diff_hunk": "@@ -108,18 +110,19 @@ def initiate_connection(self) -> None:\n     async def send_data(\n         self, stream_id: int, data: bytes, timeout: TimeoutCon"
+    },
+    {
+      "file": "httpx/dispatch/http2.py",
+      "line": 1,
+      "body": "I'm not sure that here we need to reduce the value of `max_outbound_frame_size` by one, because according to the `h2` documentation, this is the [maximum value](https://python-hyper.org/projects/h2/en/stable/api.html#h2.connection.H2Connection.max_outbound_frame_size) that can be sent and it [should",
+      "user": "nsidnev",
+      "diff_hunk": "@@ -108,18 +110,19 @@ def initiate_connection(self) -> None:\n     async def send_data(\n         self, stream_id: int, data: bytes, timeout: TimeoutCon"
+    },
+    {
+      "file": "httpx/dispatch/http2.py",
+      "line": 1,
+      "body": "I think that we should replace `len(event.data)` with `event.flow_controlled_length`, according to [this](https://python-hyper.org/projects/h2/en/stable/advanced-usage.html#working-with-flow-control) part of the h2 documentation, and I also don’t quite understand why the code below with manual contr",
+      "user": "nsidnev",
+      "diff_hunk": "@@ -158,6 +159,17 @@ def initiate_connection(self) -> None:\n             if isinstance(event, h2.events.DataReceived):\n                 self.h2_state."
+    },
+    {
+      "file": "httpx/dispatch/http2.py",
+      "line": 1,
+      "body": "I think that `KeyError` can be raised here, if HTTP/2 on the server will not work correctly. Perhaps we should check that `event_stream_id` value is in the `window_update_received` dictionary.",
+      "user": "nsidnev",
+      "diff_hunk": "@@ -173,6 +185,13 @@ def initiate_connection(self) -> None:\n                 logger.debug(\n                     f\"receive_event stream_id={event_strea"
+    },
+    {
+      "file": "httpx/dispatch/http2.py",
+      "line": 1,
+      "body": "In testing an error was thrown when chunk size was `self.h2_state.max_outbound_frame_size` (which appeared to always be 2^14 = 16384) which said that the limit on frame size was the 16383. Adding in the -1 fixed the issue, and I assumed that somewhere the maximum value was being interpreted as stric",
+      "user": "IsaacBenghiat",
+      "diff_hunk": "@@ -108,18 +110,19 @@ def initiate_connection(self) -> None:\n     async def send_data(\n         self, stream_id: int, data: bytes, timeout: TimeoutCon"
+    },
+    {
+      "file": "httpx/dispatch/http2.py",
+      "line": 1,
+      "body": "I think that this error was caused by unhandled `WindowsUpdated` event and error in splitting data into chunks. In `h2` this [checked](https://github.com/python-hyper/hyper-h2/blob/385ced7d30a7ccb9b3f163f1bc4e90cf2f4ee184/h2/connection.py#L850) as greater than, so I don't think that there is a need ",
+      "user": "nsidnev",
+      "diff_hunk": "@@ -108,18 +110,19 @@ def initiate_connection(self) -> None:\n     async def send_data(\n         self, stream_id: int, data: bytes, timeout: TimeoutCon"
+    },
+    {
+      "file": "httpx/dispatch/http2.py",
+      "line": 1,
+      "body": "Implemented this in commit.",
+      "user": "IsaacBenghiat",
+      "diff_hunk": "@@ -158,6 +159,17 @@ def initiate_connection(self) -> None:\n             if isinstance(event, h2.events.DataReceived):\n                 self.h2_state."
+    },
+    {
+      "file": "httpx/dispatch/http2.py",
+      "line": 1,
+      "body": "Handled this error in new commit.",
+      "user": "IsaacBenghiat",
+      "diff_hunk": "@@ -173,6 +185,13 @@ def initiate_connection(self) -> None:\n                 logger.debug(\n                     f\"receive_event stream_id={event_strea"
+    },
+    {
+      "file": "httpx/dispatch/http2.py",
+      "line": 1,
+      "body": "I made this change because it helped me understand what the code was doing, it is functionally the same as the code before the change. I am fine with whichever version you prefer.",
+      "user": "IsaacBenghiat",
+      "diff_hunk": "@@ -139,16 +142,14 @@ def initiate_connection(self) -> None:\n             # read timeouts, if we haven't already.\n             self.timeout_flags[stre"
+    },
+    {
+      "file": "httpx/dispatch/http2.py",
+      "line": 1,
+      "body": "Why do we still need these 2 lines? As I see it `.receive_event` will process all write operations inside itself, which means that message about increasing the size of the window will be included in the sending payload. So if the stream is open, then the data will definitely be sent there or even ea",
+      "user": "nsidnev",
+      "diff_hunk": "@@ -139,25 +142,27 @@ def initiate_connection(self) -> None:\n             # read timeouts, if we haven't already.\n             self.timeout_flags[stre"
+    },
+    {
+      "file": "httpx/dispatch/http2.py",
+      "line": 1,
+      "body": "You are right, these two lines are redundant. I'll remove them.",
+      "user": "IsaacBenghiat",
+      "diff_hunk": "@@ -139,25 +142,27 @@ def initiate_connection(self) -> None:\n             # read timeouts, if we haven't already.\n             self.timeout_flags[stre"
+    },
+    {
+      "file": "httpx/dispatch/http2.py",
+      "line": 1,
+      "body": "Resolved on other request for changes.",
+      "user": "IsaacBenghiat",
+      "diff_hunk": "@@ -158,6 +159,17 @@ def initiate_connection(self) -> None:\n             if isinstance(event, h2.events.DataReceived):\n                 self.h2_state."
+    },
+    {
+      "file": "httpx/dispatch/http2.py",
+      "line": 1,
+      "body": "Resolved on other request for changes.",
+      "user": "IsaacBenghiat",
+      "diff_hunk": "@@ -108,18 +110,19 @@ def initiate_connection(self) -> None:\n     async def send_data(\n         self, stream_id: int, data: bytes, timeout: TimeoutCon"
+    },
+    {
+      "file": "httpx/dispatch/http2.py",
+      "line": 1,
+      "body": "Removed -1 in new commit.",
+      "user": "IsaacBenghiat",
+      "diff_hunk": "@@ -108,18 +110,19 @@ def initiate_connection(self) -> None:\n     async def send_data(\n         self, stream_id: int, data: bytes, timeout: TimeoutCon"
+    },
+    {
+      "file": "httpx/dispatch/http2.py",
+      "line": 1,
+      "body": "I think I prefer the earlier version because the exit point isn't in the `while` loop. I'm going to make the change and then this PR looks good to me. :)",
+      "user": "sethmlarson",
+      "diff_hunk": "@@ -139,16 +142,14 @@ def initiate_connection(self) -> None:\n             # read timeouts, if we haven't already.\n             self.timeout_flags[stre"
+    },
+    {
+      "file": "tests/dispatch/test_http2.py",
+      "line": 1,
+      "body": "Can we group these two tests together, like other sync/async pairs? Also the convention in this file seems to be test_async_... for the async test cases. :)",
+      "user": "florimondmanca",
+      "diff_hunk": "@@ -65,6 +79,20 @@ def test_http2_post_request():\n     }\n \n \n+async def test_http2_large_async_post_request(backend):"
+    },
+    {
+      "file": "httpx/dispatch/http2.py",
+      "line": 50,
+      "body": "Just a comprehension note — I’m wondering why this condition indicates that we should wait for the window to be updated? Is it happening when the max outbound limit is 0? Or when we receive no data?\r\n\r\nMaybe a link to an appropriate section of the HTTP/2 standard could be useful here.\r\n\r\nWe could al",
+      "user": "florimondmanca",
+      "diff_hunk": "@@ -108,18 +110,19 @@ def initiate_connection(self) -> None:\n     async def send_data(\n         self, stream_id: int, data: bytes, timeout: TimeoutCon"
+    },
+    {
+      "file": "tests/dispatch/test_http2.py",
+      "line": 1,
+      "body": "Changed order and name in new commit.",
+      "user": "IsaacBenghiat",
+      "diff_hunk": "@@ -65,6 +79,20 @@ def test_http2_post_request():\n     }\n \n \n+async def test_http2_large_async_post_request(backend):"
+    },
+    {
+      "file": "httpx/dispatch/http2.py",
+      "line": 50,
+      "body": "Added some documentation to the code in new commit.",
+      "user": "IsaacBenghiat",
+      "diff_hunk": "@@ -108,18 +110,19 @@ def initiate_connection(self) -> None:\n     async def send_data(\n         self, stream_id: int, data: bytes, timeout: TimeoutCon"
+    }
+  ]
+}

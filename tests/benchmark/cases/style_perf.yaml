@@ -1,0 +1,7 @@
+name: "Mixed: style + performance issues"
+diff_file: "tests/fixtures/style_perf.diff"
+expected:
+  style:
+    - file: "src/utils.py"
+      line_start: 13
+      title_contains: "未使用"

@@ -1,0 +1,281 @@
+{
+  "repo": "django/django",
+  "pr": 11414,
+  "title": "Fixed #30509 -- Various FileResponse fixes and changes",
+  "description": "FileResponse fixes",
+  "issues": [
+    {
+      "file": "django/http/response.py",
+      "line": 1,
+      "body": "I'm not sure the rename here is worth the churn. ",
+      "user": "carltongibson",
+      "diff_hunk": "@@ -406,28 +408,41 @@ def _set_streaming_content(self, value):\n         if hasattr(filelike, 'close'):\n             self._closable_objects.append(file"
+    },
+    {
+      "file": "django/http/response.py",
+      "line": 1,
+      "body": "If we're moving `encoding_map` it may as well go below the comment, where it's used. (And perhaps we don't need to temporary variable then?)",
+      "user": "carltongibson",
+      "diff_hunk": "@@ -406,28 +408,41 @@ def _set_streaming_content(self, value):\n         if hasattr(filelike, 'close'):\n             self._closable_objects.append(file"
+    },
+    {
+      "file": "django/http/response.py",
+      "line": 1,
+      "body": "Can we use the `io.SEEK_END` constant here?",
+      "user": "carltongibson",
+      "diff_hunk": "@@ -406,28 +408,41 @@ def _set_streaming_content(self, value):\n         if hasattr(filelike, 'close'):\n             self._closable_objects.append(file"
+    },
+    {
+      "file": "tests/responses/test_fileresponse.py",
+      "line": 1,
+      "body": "Can you combine these 2 tests using `subTest()`",
+      "user": "carltongibson",
+      "diff_hunk": "@@ -31,6 +38,45 @@ def test_file_from_buffer_unnamed_attachment(self):\n         self.assertEqual(response['Content-Disposition'], 'attachment')\n      "
+    },
+    {
+      "file": "tests/responses/test_fileresponse.py",
+      "line": 1,
+      "body": "Combine with `subTest()` \r\n\r\nIs it worth adding the _relative_ named versions? ",
+      "user": "carltongibson",
+      "diff_hunk": "@@ -31,6 +38,45 @@ def test_file_from_buffer_unnamed_attachment(self):\n         self.assertEqual(response['Content-Disposition'], 'attachment')\n      "
+    },
+    {
+      "file": "django/http/response.py",
+      "line": 1,
+      "body": "i moved it to be at the beginning of the block in which it's being used, so it should be the same performance-wise, while still relatively keeping the _declaring constants_ - _logic_ structure.\r\n\r\nyes, we indeed do not need that variable, although i choose to not write it this way because i personal",
+      "user": "ShingenPizza",
+      "diff_hunk": "@@ -406,28 +408,41 @@ def _set_streaming_content(self, value):\n         if hasattr(filelike, 'close'):\n             self._closable_objects.append(file"
+    },
+    {
+      "file": "django/http/response.py",
+      "line": 1,
+      "body": "If you prefer it, keep it for now. We can decide later. 🙂",
+      "user": "carltongibson",
+      "diff_hunk": "@@ -406,28 +408,41 @@ def _set_streaming_content(self, value):\n         if hasattr(filelike, 'close'):\n             self._closable_objects.append(file"
+    },
+    {
+      "file": "django/http/response.py",
+      "line": 1,
+      "body": "If you prefer it, keep it for now. We can decide later. 🙂",
+      "user": "carltongibson",
+      "diff_hunk": "@@ -406,28 +408,41 @@ def _set_streaming_content(self, value):\n         if hasattr(filelike, 'close'):\n             self._closable_objects.append(file"
+    },
+    {
+      "file": "tests/responses/test_fileresponse.py",
+      "line": 1,
+      "body": "IDK if it's worth right now, as it shouldn't affect anything anymore, but it doesn't hurt either, so i've added it for the future.",
+      "user": "ShingenPizza",
+      "diff_hunk": "@@ -31,6 +38,45 @@ def test_file_from_buffer_unnamed_attachment(self):\n         self.assertEqual(response['Content-Disposition'], 'attachment')\n      "
+    },
+    {
+      "file": "django/http/response.py",
+      "line": 1,
+      "body": "I'm not sure either, but this way it just seems more how it should have been from the beginning... imo. And will it ever be more worth? Because i'm pretty sure it's only the _churn_ will only get bigger and messier with time.",
+      "user": "ShingenPizza",
+      "diff_hunk": "@@ -406,28 +408,41 @@ def _set_streaming_content(self, value):\n         if hasattr(filelike, 'close'):\n             self._closable_objects.append(file"
+    },
+    {
+      "file": "django/http/response.py",
+      "line": 1,
+      "body": "How about instead/additionally we remove that method from the docs, so people don't try to call it manually, unless they find it themselves to override it?",
+      "user": "ShingenPizza",
+      "diff_hunk": "@@ -406,28 +408,41 @@ def _set_streaming_content(self, value):\n         if hasattr(filelike, 'close'):\n             self._closable_objects.append(file"
+    },
+    {
+      "file": "django/http/response.py",
+      "line": 1,
+      "body": "Had to add some minor magic so it's possible to get back to the initial position when `tell` isn't available.",
+      "user": "ShingenPizza",
+      "diff_hunk": "@@ -443,29 +445,37 @@ def set_headers(self, filelike):\n         Set some common response headers (Content-Length, Content-Type, and\n         Content-D"
+    },
+    {
+      "file": "tests/responses/test_fileresponse.py",
+      "line": 1,
+      "body": "This is already covered by `test_file_from_disk_as_attachment()`",
+      "user": "carltongibson",
+      "diff_hunk": "@@ -11,25 +12,135 @@\n \n class FileResponseTests(SimpleTestCase):\n     def test_file_from_disk_response(self):\n-        response = FileResponse(open(__"
+    },
+    {
+      "file": "tests/responses/test_fileresponse.py",
+      "line": 1,
+      "body": "I'm thinking a single test setting the `custom_name` would be enough. ",
+      "user": "carltongibson",
+      "diff_hunk": "@@ -11,25 +12,135 @@\n \n class FileResponseTests(SimpleTestCase):\n     def test_file_from_disk_response(self):\n-        response = FileResponse(open(__"
+    },
+    {
+      "file": "django/http/response.py",
+      "line": 1,
+      "body": "This should live in FileResponse.__init__() checking if content_type was not None in `kwargs`. \r\n\r\nThe variable name should either be something like `use_default_...` or `guess_default_...` or else `explicit_..._set` or similar. ",
+      "user": "carltongibson",
+      "diff_hunk": "@@ -57,6 +58,7 @@ def __init__(self, content_type=None, status=None, reason=None, charset=None):\n                 raise ValueError('HTTP status code m"
+    },
+    {
+      "file": "tests/responses/test_fileresponse.py",
+      "line": 1,
+      "body": "Are we really testing the Content-Type setting here? \r\n\r\nIt strikes me this test is really about the Content-Disposition behaviour. We should focus it to that. (With a separate case for testing 'Content-Type' branched (such as guessing the content type from the filename.)",
+      "user": "carltongibson",
+      "diff_hunk": "@@ -11,25 +12,135 @@\n \n class FileResponseTests(SimpleTestCase):\n     def test_file_from_disk_response(self):\n-        response = FileResponse(open(__"
+    },
+    {
+      "file": "tests/responses/test_fileresponse.py",
+      "line": 1,
+      "body": "This **was** covered by `test_file_from_disk_as_attachment()` until i [*merged*](https://github.com/django/django/pull/11414#issuecomment-497459343) it into this one combined test :)",
+      "user": "ShingenPizza",
+      "diff_hunk": "@@ -11,25 +12,135 @@\n \n class FileResponseTests(SimpleTestCase):\n     def test_file_from_disk_response(self):\n-        response = FileResponse(open(__"
+    },
+    {
+      "file": "django/http/response.py",
+      "line": 1,
+      "body": "Is the lack of preceding underscore on purpose?\r\nAlso i don't agree with the idea of `use_default_content_type` or `guess_default_content_type` - after all, it's used to inform `set_headers()` to NOT use the default content_type value, and \"guessing default\"... excuse me, but what would that even me",
+      "user": "ShingenPizza",
+      "diff_hunk": "@@ -57,6 +58,7 @@ def __init__(self, content_type=None, status=None, reason=None, charset=None):\n                 raise ValueError('HTTP status code m"
+    },
+    {
+      "file": "django/http/response.py",
+      "line": 1,
+      "body": "Sounds good. (The lack of a `_` wasn't central to the point I was trying to communicate.) ",
+      "user": "carltongibson",
+      "diff_hunk": "@@ -57,6 +58,7 @@ def __init__(self, content_type=None, status=None, reason=None, charset=None):\n                 raise ValueError('HTTP status code m"
+    },
+    {
+      "file": "tests/responses/test_fileresponse.py",
+      "line": 1,
+      "body": "If the assertions fail, the files won't be cleaned up (and will lead to different results from run to run on the seek/length tests). I think this may be an issue elsewhere in this test module, but we certainly shouldn't make it worse with this PR. Can we still assert after the response is closed? Ot",
+      "user": "jacobtylerwalls",
+      "diff_hunk": "@@ -9,31 +10,166 @@\n from django.test import SimpleTestCase\n \n \n+class UnseekableBytesIO(io.BytesIO):\n+    def seekable(self):\n+        return False\n+"
+    },
+    {
+      "file": "tests/responses/test_fileresponse.py",
+      "line": 81,
+      "body": "See below about file closing.",
+      "user": "jacobtylerwalls",
+      "diff_hunk": "@@ -9,31 +10,166 @@\n from django.test import SimpleTestCase\n \n \n+class UnseekableBytesIO(io.BytesIO):\n+    def seekable(self):\n+        return False\n+"
+    },
+    {
+      "file": "tests/responses/test_fileresponse.py",
+      "line": 1,
+      "body": "Django doesn't use line continuation characters.\r\n```suggestion\r\n        for (filename, header_filename), (as_attachment, header_disposition) in itertools.product(\r\n                filenames, dispositions\r\n        ):\r\n```",
+      "user": "jacobtylerwalls",
+      "diff_hunk": "@@ -9,31 +10,166 @@\n from django.test import SimpleTestCase\n \n \n+class UnseekableBytesIO(io.BytesIO):\n+    def seekable(self):\n+        return False\n+"
+    },
+    {
+      "file": "tests/responses/test_fileresponse.py",
+      "line": 134,
+      "body": "I hope you don't see this as bikeshedding -- but I think an f-string would be more readable because of how deeply indented we are, then in addition I have to unpack a tuple to read it, etc.",
+      "user": "jacobtylerwalls",
+      "diff_hunk": "@@ -9,31 +10,98 @@\n from django.test import SimpleTestCase\n \n \n+class UnseekableBytesIO(io.BytesIO):\n+    def seekable(self):\n+        return False\n+\n"
+    },
+    {
+      "file": "tests/responses/test_fileresponse.py",
+      "line": 87,
+      "body": "See below about file closing.",
+      "user": "jacobtylerwalls",
+      "diff_hunk": "@@ -9,31 +10,98 @@\n from django.test import SimpleTestCase\n \n \n+class UnseekableBytesIO(io.BytesIO):\n+    def seekable(self):\n+        return False\n+\n"
+    },
+    {
+      "file": "tests/responses/test_fileresponse.py",
+      "line": 78,
+      "body": "This leaves me a little nervous -- what about some `with tempfile.NamedTemporaryFile() as tmp:` goodness? Forgive me if there's a basic reason why not I'm neglecting.",
+      "user": "jacobtylerwalls",
+      "diff_hunk": "@@ -25,6 +25,60 @@ def test_content_length_buffer(self):\n         response = FileResponse(io.BytesIO(b'binary content'))\n         self.assertEqual(res"
+    },
+    {
+      "file": "tests/responses/test_fileresponse.py",
+      "line": 134,
+      "body": "oh, i love f-strings and i would've used them already.\r\nhowever, in the previous PR [i was told to not use them yet](https://github.com/django/django/pull/11011#discussion_r258771475).\r\n> Stick to .format for now. Until we settle to switch to f strings for the whole code base we should stick to form",
+      "user": "ShingenPizza",
+      "diff_hunk": "@@ -9,31 +10,98 @@\n from django.test import SimpleTestCase\n \n \n+class UnseekableBytesIO(io.BytesIO):\n+    def seekable(self):\n+        return False\n+\n"
+    },
+    {
+      "file": "tests/responses/test_fileresponse.py",
+      "line": 1,
+      "body": "doesn't it apply to all file-opening tests, and not just the couple marked?\r\nalso, while it would help with the assertion fails, it still doesn't help in the case of an exception while creating the FileResponse object.\r\nso basically we'd have to surround every test with something like this:\r\n```pyth",
+      "user": "ShingenPizza",
+      "diff_hunk": "@@ -9,31 +10,166 @@\n from django.test import SimpleTestCase\n \n \n+class UnseekableBytesIO(io.BytesIO):\n+    def seekable(self):\n+        return False\n+"
+    },
+    {
+      "file": "tests/responses/test_fileresponse.py",
+      "line": 1,
+      "body": "I guess first thing would be to verify that that we can just do:\r\n```\r\nfile = open('whatever')\r\nresp = FileResponse(file)\r\nresp.close()\r\n# assert on the resp object that's already closed\r\n```\r\nIs that so? It appeared at a quick glance to me, but you've spent vastly more time thinking about this!",
+      "user": "jacobtylerwalls",
+      "diff_hunk": "@@ -9,31 +10,166 @@\n from django.test import SimpleTestCase\n \n \n+class UnseekableBytesIO(io.BytesIO):\n+    def seekable(self):\n+        return False\n+"
+    },
+    {
+      "file": "tests/responses/test_fileresponse.py",
+      "line": 78,
+      "body": "this test is checking the support for a possible object that is seekable but has no `.tell()`.\r\n`tempfile.NamedTemporaryFile()` has `.tell()`.",
+      "user": "ShingenPizza",
+      "diff_hunk": "@@ -25,6 +25,60 @@ def test_content_length_buffer(self):\n         response = FileResponse(io.BytesIO(b'binary content'))\n         self.assertEqual(res"
+    },
+    {
+      "file": "tests/responses/test_fileresponse.py",
+      "line": 1,
+      "body": "If more of the tests use temp files instead of the actual test module file itself then I think we can avoid this super-duper safety to wrap the actual file creation.\r\n\r\nWe're hoping the assertions fail someday and catch a bug (or, barring that, we're hoping Carlton downloads your patch and verifies ",
+      "user": "jacobtylerwalls",
+      "diff_hunk": "@@ -9,31 +10,166 @@\n from django.test import SimpleTestCase\n \n \n+class UnseekableBytesIO(io.BytesIO):\n+    def seekable(self):\n+        return False\n+"
+    },
+    {
+      "file": "tests/responses/test_fileresponse.py",
+      "line": 1,
+      "body": "> I guess first thing would be to verify that that we can just do:\r\n> \r\n> ```python\r\n> file = open('whatever')\r\n> resp = FileResponse(file)\r\n> resp.close()\r\n> # assert on the resp object that's already closed\r\n> ```\r\n> \r\n> Is that so? It appeared at a quick glance to me, but you've spent vastly more",
+      "user": "ShingenPizza",
+      "diff_hunk": "@@ -9,31 +10,166 @@\n from django.test import SimpleTestCase\n \n \n+class UnseekableBytesIO(io.BytesIO):\n+    def seekable(self):\n+        return False\n+"
+    },
+    {
+      "file": "tests/responses/test_fileresponse.py",
+      "line": 78,
+      "body": "Thanks. Still wondering though if you can pass it by name to your TestFile wrapper. You'd be operating on a temp file but your TestFile instance would lack 'tell', no?",
+      "user": "jacobtylerwalls",
+      "diff_hunk": "@@ -25,6 +25,60 @@ def test_content_length_buffer(self):\n         response = FileResponse(io.BytesIO(b'binary content'))\n         self.assertEqual(res"
+    },
+    {
+      "file": "tests/responses/test_fileresponse.py",
+      "line": 78,
+      "body": "Ah, I see you're adhering to the way these tests were already using '__file__' -- no need to increase the scope of this PR more. Apologies.",
+      "user": "jacobtylerwalls",
+      "diff_hunk": "@@ -25,6 +25,60 @@ def test_content_length_buffer(self):\n         response = FileResponse(io.BytesIO(b'binary content'))\n         self.assertEqual(res"
+    },
+    {
+      "file": "tests/responses/test_fileresponse.py",
+      "line": 1,
+      "body": "As I added below, I'll avoid suggesting things that would increase scope -- but for the very quick win to have response.close() called before the assertions.",
+      "user": "jacobtylerwalls",
+      "diff_hunk": "@@ -9,31 +10,166 @@\n from django.test import SimpleTestCase\n \n \n+class UnseekableBytesIO(io.BytesIO):\n+    def seekable(self):\n+        return False\n+"
+    },
+    {
+      "file": "tests/responses/test_fileresponse.py",
+      "line": 78,
+      "body": "> Thanks. Still wondering though if you can pass it by name to your TestFile wrapper. You'd be operating on a temp file but your TestFile instance would lack 'tell', no?\r\n\r\nohh, that's what you meant.\r\nwell, that would be opening an already opened file, and when i try it gives me a 'permission denie",
+      "user": "ShingenPizza",
+      "diff_hunk": "@@ -25,6 +25,60 @@ def test_content_length_buffer(self):\n         response = FileResponse(io.BytesIO(b'binary content'))\n         self.assertEqual(res"
+    },
+    {
+      "file": "tests/responses/test_fileresponse.py",
+      "line": 134,
+      "body": "> Yes, let it rip!\r\n\r\nWell, in moderation... 😄 But, yes, they are now accepted.\r\n\r\nSee halfway down the Python style section of the [coding style documentation](https://docs.djangoproject.com/en/3.1/internals/contributing/writing-code/coding-style/) for guidance.\r\n\r\nReadability is key. (Personally I",
+      "user": "ngnpope",
+      "diff_hunk": "@@ -9,31 +10,98 @@\n from django.test import SimpleTestCase\n \n \n+class UnseekableBytesIO(io.BytesIO):\n+    def seekable(self):\n+        return False\n+\n"
+    },
+    {
+      "file": "tests/responses/test_fileresponse.py",
+      "line": 78,
+      "body": "> this test is checking the support for a possible object that is seekable but has no `.tell()`.\r\n> `tempfile.NamedTemporaryFile()` has `.tell()`.\r\n\r\nJust as an aside, whether there is any change here or not, but you could do:\r\n\r\n```python\r\nwith tempfile.NamedTemporaryFile() as tmp:\r\n    del tmp.tel",
+      "user": "ngnpope",
+      "diff_hunk": "@@ -25,6 +25,60 @@ def test_content_length_buffer(self):\n         response = FileResponse(io.BytesIO(b'binary content'))\n         self.assertEqual(res"
+    },
+    {
+      "file": "tests/responses/test_fileresponse.py",
+      "line": 78,
+      "body": "Nice, I like Nick's idea.\r\n\r\nMy answer was going to be, yes, let's defer the temp file idea to another PR, because my original goal was to help you get this marked ready for checkin--however, if you want to run with Nick's idea, that could potentially reduce the overhead of having to create the `Tes",
+      "user": "jacobtylerwalls",
+      "diff_hunk": "@@ -25,6 +25,60 @@ def test_content_length_buffer(self):\n         response = FileResponse(io.BytesIO(b'binary content'))\n         self.assertEqual(res"
+    },
+    {
+      "file": "tests/responses/test_fileresponse.py",
+      "line": 78,
+      "body": "I like the idea, but...\r\n```python\r\nwith tempfile.NamedTemporaryFile() as f:\r\n    print(hasattr(f, 'tell'), f.tell)\r\n    del f.tell\r\n    print(hasattr(f, 'tell'), f.tell)\r\n    del f.tell\r\n    del f.tell\r\n    \r\nTrue <function BufferedRandom.tell at 0x0000000004F38EE0>\r\nTrue <function BufferedRandom.t",
+      "user": "ShingenPizza",
+      "diff_hunk": "@@ -25,6 +25,60 @@ def test_content_length_buffer(self):\n         response = FileResponse(io.BytesIO(b'binary content'))\n         self.assertEqual(res"
+    }
+  ]
+}

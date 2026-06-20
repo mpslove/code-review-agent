@@ -1,0 +1,20 @@
+name: "SQL injection + hardcoded secrets in auth module"
+diff_file: "tests/fixtures/sql_injection.diff"
+expected:
+  security:
+    - file: "src/auth.py"
+      line_start: 4
+      severity_contains: "high"
+      title_contains: "密钥"
+    - file: "src/auth.py"
+      line_start: 7
+      severity: "critical"
+      title_contains: "SQL"
+    - file: "src/auth.py"
+      line_start: 11
+      severity: "critical"
+      title_contains: "SQL"
+  performance:
+    - file: "src/auth.py"
+      line_start: 18
+      title_contains: "N+1"

@@ -1,0 +1,36 @@
+{
+  "repo": "pytest-dev/pytest",
+  "pr": 14546,
+  "title": "[refactor] Make base assertion comparisons return an iterator instead of a list of string",
+  "description": "Make base assertion comparisons return an iterator",
+  "issues": [
+    {
+      "file": "src/_pytest/assertion/util.py",
+      "line": 1,
+      "body": "We should drop the \"e.g.\" part since it doesn't hold as of this commit.",
+      "user": "bluetech",
+      "diff_hunk": "@@ -139,8 +140,19 @@ def assertrepr_compare(\n     verbose: int,\n     highlighter: _HighlightFunc,\n  "
+    },
+    {
+      "file": "src/_pytest/assertion/util.py",
+      "line": 1,
+      "body": "\"are the per-line explanation\" -> \"is the detailed explanation\".\n\nI don't think \"per-line\" is entirely accurate.",
+      "user": "bluetech",
+      "diff_hunk": "@@ -139,8 +140,19 @@ def assertrepr_compare(\n     verbose: int,\n     highlighter: _HighlightFunc,\n  "
+    },
+    {
+      "file": "src/_pytest/assertion/util.py",
+      "line": 1,
+      "body": "Would move this above the `for line in source`, since it's not set or used in this block of code.",
+      "user": "bluetech",
+      "diff_hunk": "@@ -164,39 +176,41 @@ def assertrepr_compare(\n \n     summary = f\"{left_repr} {op} {right_repr}\"\n \n- "
+    },
+    {
+      "file": "src/_pytest/assertion/util.py",
+      "line": 65,
+      "body": "I suggest a comment like this: Only yield summary if there is a detailed explanation. Make sure there's a separating empty line after the summary.\n\nUsually I avoid comments which just describe what th",
+      "user": "bluetech",
+      "diff_hunk": "@@ -164,39 +176,41 @@ def assertrepr_compare(\n \n     summary = f\"{left_repr} {op} {right_repr}\"\n \n- "
+    }
+  ]
+}

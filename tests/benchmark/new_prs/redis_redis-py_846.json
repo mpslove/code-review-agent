@@ -1,0 +1,33 @@
+{
+  "repo": "redis/redis-py",
+  "pr": 846,
+  "title": "InterruptedError is not defined in Python 2",
+  "additions": 12,
+  "deletions": 2,
+  "issues": [
+    {
+      "file": "redis/_compat.py",
+      "line": 1,
+      "body": "While the comment helps, this could be clearer testing: `e.errno == errno.EINTR`. I believe the `errno` module is in both Py2 and Py3.\r\n\r\nAlso, in what case does `e.errno is None` mean we should treat the error as an interrupt and try again?",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/_compat.py",
+      "line": 1,
+      "body": "If we just `raise` (without the `e`), we'll get the original traceback. I'm not 100% certain, but I believe on some Python versions `raise e` would raise the exception starting there rather than where the exception originally took place.",
+      "user": "andymccurdy"
+    },
+    {
+      "file": "redis/_compat.py",
+      "line": 1,
+      "body": "Sure, I'll switch this out.",
+      "user": "sethmlarson"
+    },
+    {
+      "file": "redis/_compat.py",
+      "line": 1,
+      "body": "Might be able to remove the `errno is None` check. I don't know if the `InterruptedError` exception sets `errno` on Python 3 but it might, we can try it! And I thought about doing the import but I'm not sure if all platforms define `errno.EINTR`. I know Windows has a lot of flakiness in the `errno` ",
+      "user": "sethmlarson"
+    }
+  ]
+}

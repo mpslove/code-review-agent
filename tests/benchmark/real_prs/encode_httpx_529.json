@@ -1,0 +1,50 @@
+{
+  "repo": "encode/httpx",
+  "pr": 529,
+  "title": "Fix redirect cookie behavior",
+  "description": "Fix redirect cookie behavior",
+  "issues": [
+    {
+      "file": "test-requirements.txt",
+      "line": 4,
+      "body": "Why drop this plugin?",
+      "user": "StephenBrown2",
+      "diff_hunk": "@@ -6,7 +6,6 @@ brotlipy==0.7.*\n cryptography\n flake8\n flake8-bugbear\n-flake8-comprehensions"
+    },
+    {
+      "file": "test-requirements.txt",
+      "line": 4,
+      "body": "It's unneccessarily causing breakages...\r\n\r\nEg. expressions such as...\r\n\r\n`self.content = b\"\".join([part async for part in self.stream()])`\r\n\r\nAre failing with \"C416 Unnecessary list comprehension - rewrite using list().\"",
+      "user": "lovelydinosaur",
+      "diff_hunk": "@@ -6,7 +6,6 @@ brotlipy==0.7.*\n cryptography\n flake8\n flake8-bugbear\n-flake8-comprehensions"
+    },
+    {
+      "file": "tests/client/test_redirects.py",
+      "line": 1,
+      "body": "Gotcha :)\r\n\r\n```suggestion\r\n```",
+      "user": "florimondmanca",
+      "diff_hunk": "@@ -290,3 +290,72 @@ class MockDispatch(AsyncDispatcher):\n     url = \"https://example.com/cross_subdomain\"\n     response = await client.get(url)\n     "
+    },
+    {
+      "file": "test-requirements.txt",
+      "line": 4,
+      "body": "Can be resolved with `# noqa: C416`, as we want to keep the comprehension _there_, but perhaps not other places (non-async comprehensions).",
+      "user": "StephenBrown2",
+      "diff_hunk": "@@ -6,7 +6,6 @@ brotlipy==0.7.*\n cryptography\n flake8\n flake8-bugbear\n-flake8-comprehensions"
+    },
+    {
+      "file": "test-requirements.txt",
+      "line": 4,
+      "body": "Related: https://github.com/adamchainz/flake8-comprehensions/issues/196",
+      "user": "florimondmanca",
+      "diff_hunk": "@@ -6,7 +6,6 @@ brotlipy==0.7.*\n cryptography\n flake8\n flake8-bugbear\n-flake8-comprehensions"
+    },
+    {
+      "file": "test-requirements.txt",
+      "line": 4,
+      "body": "Fix released if you want to add it back :)",
+      "user": "adamchainz",
+      "diff_hunk": "@@ -6,7 +6,6 @@ brotlipy==0.7.*\n cryptography\n flake8\n flake8-bugbear\n-flake8-comprehensions"
+    }
+  ]
+}

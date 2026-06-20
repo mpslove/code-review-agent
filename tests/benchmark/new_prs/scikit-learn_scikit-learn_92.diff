@@ -1,0 +1,791 @@
+diff --git a/doc/modules/datasets.rst b/doc/modules/datasets.rst
+index 3ea0c76677b2c..9b320a8c3fe28 100644
+--- a/doc/modules/datasets.rst
++++ b/doc/modules/datasets.rst
+@@ -47,6 +47,10 @@ most popular model for Face Detection is called Viola-Johns and is
+ implemented in the OpenCV library. The LFW faces were extracted by this
+ face detector from various online websites.
+ 
++
++Usage
++-----
++
+ ``scikit-learn`` provides two loaders that will automatically download,
+ cache, parse the metadata files, decode the jpeg and convert the
+ interesting slices into memmaped numpy arrays. This dataset size if more
+@@ -62,7 +66,7 @@ classification task (hence supervised learning)::
+   >>> from scikits.learn.datasets import load_lfw_people
+   >>> lfw_people = load_lfw_people(min_faces_per_person=100)
+ 
+-  >>> for name in lfw_people.class_names:
++  >>> for name in lfw_people.target_names:
+   ...     print name
+   ...
+   Colin Powell
+@@ -86,8 +90,8 @@ array::
+   >>> lfw_people.target.shape
+   (1140,)
+ 
+-  >>> lfw_people.target[:10]
+-  memmap([2, 3, 1, 4, 1, 0, 2, 0, 2, 1])
++  >>> list(lfw_people.target[:10])
++  [2, 3, 1, 4, 1, 0, 2, 0, 2, 1]
+ 
+ The second loader is typically used for the face verification task: each sample
+ is a pair of two picture belonging or not to the same person::
+@@ -95,7 +99,7 @@ is a pair of two picture belonging or not to the same person::
+   >>> from scikits.learn.datasets import load_lfw_pairs
+   >>> lfw_pairs_train = load_lfw_pairs(subset='train')
+ 
+-  >>> list(lfw_pairs_train.class_names)
++  >>> list(lfw_pairs_train.target_names)
+   ['Different persons', 'Same person']
+ 
+   >>> lfw_pairs_train.data.shape
+@@ -114,9 +118,17 @@ passing ``color=True``::
+ 
+ The ``load_lfw_pairs`` datasets is subdived in 3 subsets: the development
+ ``train`` set, the development ``test`` set and an evaluation ``10_folds``
+-set meant to be compute performance metrics using a 10-folds cross
++set meant to compute performance metrics using a 10-folds cross
+ validation scheme.
+ 
++.. topic:: References:
++
++ * `Labeled Faces in the Wild: A Database for Studying Face Recognition
++   in Unconstrained Environments.
++   <http://vis-www.cs.umass.edu/lfw/lfw.pdf>`_
++   Gary B. Huang, Manu Ramesh, Tamara Berg, and Erik Learned-Miller.
++   University of Massachusetts, Amherst, Technical Report 07-49, October, 2007.
++
+ 
+ Examples
+ --------
+@@ -124,11 +136,108 @@ Examples
+ :ref:`example_applications_plot_face_recognition.py`
+ 
+ 
++
+ The 20 newsgroups text dataset
+ ==============================
+ 
+-TODO
++The 20 newsgroups dataset comprises around 18000 newsgroups posts on
++20 topics splitted in two subsets: one for training (or development)
++and the other one for testing (or for performance evaluation). The split
++between the train and test set is based upon a messages posted before
++and after a specific date.
++
++
++Usage
++-----
++
++The ``scikits.learn.datasets.load_20newsgroups`` function is a data
++fetching / caching functions that downloads the data archive from
++the original `20 newsgroups website`_, extracts the archive contents
++in the ``~/scikit_learn_data/20news_home`` folder and calls the
++``scikits.learn.datasets.load_filenames`` on either the training or
++testing set folder::
++
++  >>> from scikits.learn.datasets import load_20newsgroups
++  >>> newsgroups_train = load_20newsgroups(subset='train')
++
++  >>> from pprint import pprint
++  >>> pprint(list(newsgroups_train.target_names))
++  ['alt.atheism',
++   'comp.graphics',
++   'comp.os.ms-windows.misc',
++   'comp.sys.ibm.pc.hardware',
++   'comp.sys.mac.hardware',
++   'comp.windows.x',
++   'misc.forsale',
++   'rec.autos',
++   'rec.motorcycles',
++   'rec.sport.baseball',
++   'rec.sport.hockey',
++   'sci.crypt',
++   'sci.electronics',
++   'sci.med',
++   'sci.space',
++   'soc.religion.christian',
++   'talk.politics.guns',
++   'talk.politics.mideast',
++   'talk.politics.misc',
++   'talk.religion.misc']
++
++The real data lies in the ``filenames`` and ``target`` attributes. The target
++attribute is the integer index of the category::
++
++  >>> newsgroups_train.filenames.shape
++  (11314,)
++  >>> newsgroups_train.target.shape
++  (11314,)
++  >>> newsgroups_train.target[:10]
++  array([12,  6,  9,  8,  6,  7,  9,  2, 13, 19])
++
++It is possible to load only a sub-selection of the categories by passing the
++list of the categories to load to the ``load_20newsgroups`` function::
++
++  >>> cats = ['alt.atheism', 'sci.space']
++  >>> newsgroups_train = load_20newsgroups(subset='train', categories=cats)
++
++  >>> list(newsgroups_train.target_names)
++  ['alt.atheism', 'sci.space']
++  >>> newsgroups_train.filenames.shape
++  (1073,)
++  >>> newsgroups_train.target.shape
++  (1073,)
++  >>> newsgroups_train.target[:10]
++  array([1, 1, 1, 0, 1, 0, 0, 1, 1, 1])
++
++In order to feed predictive or clustering models with the text data,
++one first need to turn the text into vectors of numerical values suitable
++for statistical analysis. This can be achieved with the utilities of the
++``scikits.learn.feature_extraction.text`` as demonstrated in the following
++example that extract `TF-IDF`_ vectors of unigram tokens::
++
++
++  >>> from scikits.learn.feature_extraction.text.sparse import Vectorizer
++  >>> documents = [open(f).read() for f in newsgroups_train.filenames]
++  >>> vectorizer = Vectorizer()
++  >>> vectors = vectorizer.fit_transform(documents)
++  >>> vectors.shape
++  (1073, 21107)
++
++The extracted TF-IDF vectors are very sparse with an average of 118 non zero
++components by sample in a more than 20000 dimensional space (less than 1% non
++zero features)::
++
++  >>> vectors.nnz / vectors.shape[0]
++  118
++
++.. _`20 newsgroups website`: http://people.csail.mit.edu/jrennie/20Newsgroups/
++.. _`TF-IDF`: http://en.wikipedia.org/wiki/Tf-idf
++
++
++Examples
++--------
+ 
++:ref:`example_grid_search_text_feature_extraction.py`
+ 
++:ref:`example_document_classification_20newsgroups.py`
+ 
+ 
+diff --git a/examples/applications/plot_face_recognition.py b/examples/applications/plot_face_recognition.py
+index 7fadd150c33df..9e1f423b498b5 100644
+--- a/examples/applications/plot_face_recognition.py
++++ b/examples/applications/plot_face_recognition.py
+@@ -57,8 +57,8 @@
+ 
+ # the label to predict is the id of the person
+ y = lfw_people.target
+-class_names = lfw_people.class_names
+-n_classes = class_names.shape[0]
++target_names = lfw_people.target_names
++n_classes = target_names.shape[0]
+ 
+ print "Total dataset size:"
+ print "n_samples: %d" % n_samples
+@@ -120,7 +120,7 @@
+ y_pred = clf.predict(X_test_pca)
+ print "done in %0.3fs" % (time() - t0)
+ 
+-print classification_report(y_test, y_pred, class_names=class_names)
++print classification_report(y_test, y_pred, target_names=target_names)
+ print confusion_matrix(y_test, y_pred, labels=range(n_classes))
+ 
+ 
+@@ -130,9 +130,9 @@
+ n_row = 3
+ n_col = 4
+ 
+-def title(y_pred, y_test, class_names, i):
+-    pred_name = class_names[y_pred[i]].rsplit(' ', 1)[-1]
+-    true_name = class_names[y_test[i]].rsplit(' ', 1)[-1]
++def title(y_pred, y_test, target_names, i):
++    pred_name = target_names[y_pred[i]].rsplit(' ', 1)[-1]
++    true_name = target_names[y_test[i]].rsplit(' ', 1)[-1]
+     return 'predicted: %s\ntrue:      %s' % (pred_name, true_name)
+ 
+ pl.figure(figsize=(1.8 * n_col, 2.4 * n_row))
+@@ -140,7 +140,7 @@ def title(y_pred, y_test, class_names, i):
+ for i in range(n_row * n_col):
+     pl.subplot(n_row, n_col, i + 1)
+     pl.imshow(X_test[i].reshape((h, w)), cmap=pl.cm.gray)
+-    pl.title(title(y_pred, y_test, class_names, i), size=12)
++    pl.title(title(y_pred, y_test, target_names, i), size=12)
+     pl.xticks(())
+     pl.yticks(())
+ 
+diff --git a/examples/document_classification_20newsgroups.py b/examples/document_classification_20newsgroups.py
+index f247617cb8cd1..6947bae9c2278 100644
+--- a/examples/document_classification_20newsgroups.py
++++ b/examples/document_classification_20newsgroups.py
+@@ -36,16 +36,23 @@
+ # License: Simplified BSD
+ 
+ from time import time
++import logging
+ import os
+ import sys
+ 
+-from scikits.learn.datasets import load_files
++from scikits.learn.datasets import load_20newsgroups
+ from scikits.learn.feature_extraction.text.sparse import Vectorizer
+ from scikits.learn.linear_model import RidgeClassifier
+ from scikits.learn.svm.sparse import LinearSVC
+ from scikits.learn.linear_model.sparse import SGDClassifier
+ from scikits.learn import metrics
+ 
++
++# Display progress logs on stdout
++logging.basicConfig(level=logging.INFO,
++                    format='%(asctime)s %(levelname)s %(message)s')
++
++
+ # parse commandline arguments
+ argv = sys.argv[1:]
+ if "--report" in argv:
+@@ -57,26 +64,6 @@
+ else:
+     print_cm = False
+ 
+-################################################################################
+-# Download the data, if not already on disk
+-url = "http://people.csail.mit.edu/jrennie/20Newsgroups/20news-18828.tar.gz"
+-archive_name = "20news-18828.tar.gz"
+-
+-if not os.path.exists(archive_name[:-7]):
+-    if not os.path.exists(archive_name):
+-        import urllib
+-        print "Downloading data, please Wait (14MB)..."
+-        print url
+-        opener = urllib.urlopen(url)
+-        open(archive_name, 'wb').write(opener.read())
+-        print
+-
+-    import tarfile
+-    print "Decompressiong the archive: " + archive_name
+-    tarfile.open(archive_name, "r:gz").extractall()
+-    print
+-
+-
+ ################################################################################
+ # Load some categories from the training set
+ categories = [
+@@ -91,18 +78,20 @@
+ print "Loading 20 newsgroups dataset for categories:"
+ print categories
+ 
+-data = load_files('20news-18828', categories=categories, shuffle=True, rng=42)
+-print "%d documents" % len(data.filenames)
+-print "%d categories" % len(data.target_names)
++data_train = load_20newsgroups(subset='train', categories=categories,
++                               shuffle=True, rng=42)
++
++data_test = load_20newsgroups(subset='test', categories=categories,
++                              shuffle=True, rng=42)
++
++print "%d documents (training set)" % len(data_train.filenames)
++print "%d documents (testing set)" % len(data_test.filenames)
++print "%d categories" % len(data_train.target_names)
+ print
+ 
+ # split a training set and a test set
+-filenames = data.filenames
+-y = data.target
+-
+-n = filenames.shape[0]
+-filenames_train, filenames_test = filenames[:-n/2], filenames[-n/2:]
+-y_train, y_test = y[:-n/2], y[-n/2:]
++filenames_train, filenames_test = data_train.filenames, data_test.filenames
++y_train, y_test = data_train.target, data_test.target
+ 
+ print "Extracting features from the training dataset using a sparse vectorizer"
+ t0 = time()
+@@ -146,7 +135,7 @@ def benchmark(clf):
+     if print_report:
+         print "classification report:"
+         print metrics.classification_report(y_test, pred,
+-                                            class_names=categories)
++                                            target_names=categories)
+ 
+     if print_cm:
+         print "confusion matrix:"
+@@ -161,7 +150,7 @@ def benchmark(clf):
+     results = benchmark(clf)
+ 
+ for penalty in ["l2", "l1"]:
+-    print 80*'='
++    print 80 * '='
+     print "%s penalty" % penalty.upper()
+     # Train Liblinear model
+     liblinear_results = benchmark(LinearSVC(loss='l2', penalty=penalty, C=1000,
+@@ -172,7 +161,7 @@ def benchmark(clf):
+                                           penalty=penalty))
+ 
+ # Train SGD with Elastic Net penalty
+-print 80*'='
++print 80 * '='
+ print "Elastic-Net penalty"
+ sgd_results = benchmark(SGDClassifier(alpha=.0001, n_iter=50,
+                                       penalty="elasticnet"))
+diff --git a/examples/grid_search_text_feature_extraction.py b/examples/grid_search_text_feature_extraction.py
+index a03d88f383e1e..bfb5f312f0e21 100644
+--- a/examples/grid_search_text_feature_extraction.py
++++ b/examples/grid_search_text_feature_extraction.py
+@@ -50,32 +50,18 @@
+ from pprint import pprint
+ from time import time
+ import os
++import logging
+ 
+-from scikits.learn.datasets import load_files
++from scikits.learn.datasets import load_20newsgroups
+ from scikits.learn.feature_extraction.text.sparse import CountVectorizer
+ from scikits.learn.feature_extraction.text.sparse import TfidfTransformer
+ from scikits.learn.linear_model.sparse import SGDClassifier
+ from scikits.learn.grid_search import GridSearchCV
+ from scikits.learn.pipeline import Pipeline
+ 
+-################################################################################
+-# Download the data, if not already on disk
+-url = "http://people.csail.mit.edu/jrennie/20Newsgroups/20news-18828.tar.gz"
+-archive_name = "20news-18828.tar.gz"
+-
+-if not os.path.exists(archive_name[:-7]):
+-    if not os.path.exists(archive_name):
+-        import urllib
+-        print "Downloading data, please Wait (14MB)..."
+-        print url
+-        opener = urllib.urlopen(url)
+-        open(archive_name, 'wb').write(opener.read())
+-        print
+-
+-    import tarfile
+-    print "Decompressiong the archive: " + archive_name
+-    tarfile.open(archive_name, "r:gz").extractall()
+-    print
++# Display progress logs on stdout
++logging.basicConfig(level=logging.INFO,
++                    format='%(asctime)s %(levelname)s %(message)s')
+ 
+ 
+ ################################################################################
+@@ -90,7 +76,7 @@
+ print "Loading 20 newsgroups dataset for categories:"
+ print categories
+ 
+-data = load_files('20news-18828', categories=categories)
++data = load_20newsgroups(subset='train', categories=categories)
+ print "%d documents" % len(data.filenames)
+ print "%d categories" % len(data.target_names)
+ print
+diff --git a/examples/mlcomp_sparse_document_classification.py b/examples/mlcomp_sparse_document_classification.py
+index 035beb6ab3f6e..d07d9e79e255a 100644
+--- a/examples/mlcomp_sparse_document_classification.py
++++ b/examples/mlcomp_sparse_document_classification.py
+@@ -109,7 +109,7 @@
+ print "Classification report on test set for classifier:"
+ print clf
+ print
+-print classification_report(y_test, pred, class_names=news_test.target_names)
++print classification_report(y_test, pred, target_names=news_test.target_names)
+ 
+ cm = confusion_matrix(y_test, pred)
+ print "Confusion matrix:"
+diff --git a/scikits/learn/datasets/__init__.py b/scikits/learn/datasets/__init__.py
+index 5a900ebd6511f..01e0e8e14888a 100644
+--- a/scikits/learn/datasets/__init__.py
++++ b/scikits/learn/datasets/__init__.py
+@@ -1,8 +1,17 @@
+ from .base import load_diabetes
+ from .base import load_digits
+-from .base import load_files
++from .base import load_filenames
+ from .base import load_iris
+ from .base import get_data_home
+ from .mlcomp import load_mlcomp
+ from .lfw import load_lfw_pairs
+ from .lfw import load_lfw_people
++from .twenty_newsgroups import load_20newsgroups
++
++# backward compatibility
++def load_files(*args, **kwargs):
++    """Deprecated, use ``scikits.learn.datasets.load_filenames`` instead"""
++    import warnings
++    warnings.warn("Deprecated in 0.8 to be removed in 0.9: use load_filenames")
++    return load_filenames(*args, **kwargs)
++
+diff --git a/scikits/learn/datasets/base.py b/scikits/learn/datasets/base.py
+index b8987856a0fc2..9b4bf980bb2f2 100644
+--- a/scikits/learn/datasets/base.py
++++ b/scikits/learn/datasets/base.py
+@@ -48,14 +48,15 @@ def get_data_home(data_home=None):
+     if data_home is None:
+         data_home = environ.get('SCIKIT_LEARN_DATA',
+                                join('~', 'scikit_learn_data'))
++    data_home = expanduser(data_home)
+     if not exists(data_home):
+         makedirs(data_home)
+-    return expanduser(data_home)
++    return data_home
+ 
+ 
+-def load_files(container_path, description=None, categories=None, shuffle=True,
+-               rng=42):
+-    """Load files with categories as subfolder names
++def load_filenames(container_path, description=None, categories=None,
++                   shuffle=True, rng=42):
++    """Load filenames with categories as subfolder names
+ 
+     Individual samples are assumed to be files stored a two levels folder
+     structure such as the following:
+@@ -100,7 +101,9 @@ def load_files(container_path, description=None, categories=None, shuffle=True,
+       if not Non, list of category names to load (other categories ignored)
+ 
+     shuffle : True by default
+-      whether or not to shuffle the data: might be important for
++      whether or not to shuffle the data: might be important for models that
++      make the assumption that the samples are independent and identically
++      distributed (i.i.d.) such as stochastic gradient descent for instance.
+ 
+     rng : a numpy random number generator or a seed integer, 42 by default
+       used to shuffle the dataset
+@@ -152,7 +155,7 @@ def load_files(container_path, description=None, categories=None, shuffle=True,
+                  DESCR=description)
+ 
+ 
+-################################################################################
++###############################################################################
+ 
+ def load_iris():
+     """load the iris dataset and returns it.
+@@ -235,7 +238,6 @@ def load_digits():
+ 
+ def load_diabetes():
+     base_dir = join(dirname(__file__), 'data')
+-    data   = np.loadtxt(join(base_dir, 'diabetes_data.csv.gz'))
++    data = np.loadtxt(join(base_dir, 'diabetes_data.csv.gz'))
+     target = np.loadtxt(join(base_dir, 'diabetes_target.csv.gz'))
+     return Bunch(data=data, target=target)
+-
+diff --git a/scikits/learn/datasets/lfw.py b/scikits/learn/datasets/lfw.py
+index e050710810dd4..a25c8909867bd 100644
+--- a/scikits/learn/datasets/lfw.py
++++ b/scikits/learn/datasets/lfw.py
+@@ -175,8 +175,8 @@ def _load_lfw_people(data_folder_path, slice_=None, color=False, resize=None,
+         raise ValueError("min_faces_per_person=%d is too restrictive" %
+                          min_faces_per_person)
+ 
+-    class_names = np.unique(person_names)
+-    target = np.searchsorted(class_names, person_names)
++    target_names = np.unique(person_names)
++    target = np.searchsorted(target_names, person_names)
+ 
+     faces = _load_imgs(file_paths, slice_, color, resize)
+ 
+@@ -188,7 +188,7 @@ def _load_lfw_people(data_folder_path, slice_=None, color=False, resize=None,
+     indices = np.arange(n_faces)
+     np.random.RandomState(42).shuffle(indices)
+     faces, target = faces[indices], target[indices]
+-    return faces, target, class_names
++    return faces, target, target_names
+ 
+ 
+ def load_lfw_people(data_home=None, funneled=True, resize=0.5,
+@@ -245,12 +245,12 @@ def load_lfw_people(data_home=None, funneled=True, resize=0.5,
+     load_func = m.cache(_load_lfw_people)
+ 
+     # load and memoize the pairs as np arrays
+-    faces, target, class_names = load_func(
++    faces, target, target_names = load_func(
+         data_folder_path, resize=resize,
+         min_faces_per_person=min_faces_per_person, color=color, slice_=slice_)
+ 
+     # pack the results as a Bunch instance
+-    return Bunch(data=faces, target=target, class_names=class_names,
++    return Bunch(data=faces, target=target, target_names=target_names,
+                  DESCR="LFW faces dataset")
+ 
+ 
+@@ -380,10 +380,10 @@ def load_lfw_pairs(subset='train', data_home=None, funneled=True, resize=0.5,
+     index_file_path = join(lfw_home, label_filenames[subset])
+ 
+     # load and memoize the pairs as np arrays
+-    pairs, target, class_names = load_func(
++    pairs, target, target_names = load_func(
+         index_file_path, data_folder_path, resize=resize, color=color,
+         slice_=slice_)
+ 
+     # pack the results as a Bunch instance
+-    return Bunch(data=pairs, target=target, class_names=class_names,
++    return Bunch(data=pairs, target=target, target_names=target_names,
+                  DESCR="'%s' segment of the LFW pairs dataset" % subset)
+diff --git a/scikits/learn/datasets/mlcomp.py b/scikits/learn/datasets/mlcomp.py
+index 75820def05a6f..9f1e2b965eaed 100644
+--- a/scikits/learn/datasets/mlcomp.py
++++ b/scikits/learn/datasets/mlcomp.py
+@@ -4,13 +4,13 @@
+ 
+ import os
+ import numpy as np
+-from scikits.learn.datasets.base import load_files
++from scikits.learn.datasets.base import load_filenames
+ 
+ 
+ def _load_document_classification(dataset_path, metadata, set_=None, **kwargs):
+     if set_ is not None:
+         dataset_path = os.path.join(dataset_path, set_)
+-    return load_files(dataset_path, metadata.get('description'), **kwargs)
++    return load_filenames(dataset_path, metadata.get('description'), **kwargs)
+ 
+ 
+ LOADERS = {
+diff --git a/scikits/learn/datasets/tests/test_lfw.py b/scikits/learn/datasets/tests/test_lfw.py
+index 9c509f835fb27..0bb90f2825cd9 100644
+--- a/scikits/learn/datasets/tests/test_lfw.py
++++ b/scikits/learn/datasets/tests/test_lfw.py
+@@ -109,9 +109,9 @@ def test_load_fake_lfw_people():
+     # the target is array of person integer ids
+     assert_array_equal(lfw_people.target, [2, 0, 1, 0, 2, 0, 2, 1, 1, 2])
+ 
+-    # names of the persons can be found using the class_names array
++    # names of the persons can be found using the target_names array
+     expected_classes = ['Abdelatif Smith', 'Abhati Kepler', 'Onur Lopez']
+-    assert_array_equal(lfw_people.class_names, expected_classes)
++    assert_array_equal(lfw_people.target_names, expected_classes)
+ 
+     # It is possible to ask for the original data without any croping or color
+     # conversion
+@@ -122,7 +122,7 @@ def test_load_fake_lfw_people():
+ 
+     # the ids and class names are the same as previously
+     assert_array_equal(lfw_people.target, [2, 0, 1, 0, 2, 0, 2, 1, 1, 2])
+-    assert_array_equal(lfw_people.class_names, expected_classes)
++    assert_array_equal(lfw_people.target_names, expected_classes)
+ 
+ 
+ @raises(ValueError)
+@@ -140,9 +140,9 @@ def test_load_fake_lfw_pairs():
+     # the target is whether the person is the same or not
+     assert_array_equal(lfw_pairs_train.target, [1, 1, 1, 1, 1, 0, 0, 0, 0, 0])
+ 
+-    # names of the persons can be found using the class_names array
++    # names of the persons can be found using the target_names array
+     expected_classes = ['Different persons', 'Same person']
+-    assert_array_equal(lfw_pairs_train.class_names, expected_classes)
++    assert_array_equal(lfw_pairs_train.target_names, expected_classes)
+ 
+     # It is possible to ask for the original data without any croping or color
+     # conversion
+@@ -152,7 +152,7 @@ def test_load_fake_lfw_pairs():
+ 
+     # the ids and class names are the same as previously
+     assert_array_equal(lfw_pairs_train.target, [1, 1, 1, 1, 1, 0, 0, 0, 0, 0])
+-    assert_array_equal(lfw_pairs_train.class_names, expected_classes)
++    assert_array_equal(lfw_pairs_train.target_names, expected_classes)
+ 
+ 
+ def test_load_lfw_people():
+@@ -171,7 +171,7 @@ def test_load_lfw_people():
+     # only 5 person have more than 100 pictures each in the dataset
+     top_classes = ['Colin Powell', 'Donald Rumsfeld', 'George W Bush',
+                    'Gerhard Schroeder', 'Tony Blair']
+-    assert_array_equal(lfw_people.class_names, top_classes)
++    assert_array_equal(lfw_people.target_names, top_classes)
+ 
+     # default slice is a rectangular shape around the face, removing
+     # most of the background
+@@ -204,7 +204,7 @@ def test_load_lfw_pairs():
+     # this dataset is used for training supervised face verification models,
+     # this is a binary classification task
+     top_classes = ['Different persons', 'Same person']
+-    assert_array_equal(lfw_pairs_train.class_names, top_classes)
++    assert_array_equal(lfw_pairs_train.target_names, top_classes)
+ 
+     # default slice is a rectangular shape around the face, removing
+     # most of the background, for each of the 2 face pictures
+diff --git a/scikits/learn/datasets/twenty_newsgroups.py b/scikits/learn/datasets/twenty_newsgroups.py
+new file mode 100644
+index 0000000000000..cb9bb74c771a6
+--- /dev/null
++++ b/scikits/learn/datasets/twenty_newsgroups.py
+@@ -0,0 +1,118 @@
++"""Caching loader for the 20 newsgroups text classification dataset
++
++
++The description of the dataset is available on the official website at:
++
++    http://people.csail.mit.edu/jrennie/20Newsgroups/
++
++Quoting the introduction:
++
++    The 20 Newsgroups data set is a collection of approximately 20,000
++    newsgroup documents, partitioned (nearly) evenly across 20 different
++    newsgroups. To the best of my knowledge, it was originally collected
++    by Ken Lang, probably for his Newsweeder: Learning to filter netnews
++    paper, though he does not explicitly mention this collection. The 20
++    newsgroups collection has become a popular data set for experiments
++    in text applications of machine learning techniques, such as text
++    classification and text clustering.
++
++This dataset loader will download the recommended "by date" variant of the
++dataset and which features a point in time split between the train and
++test sets. The compressed dataset size is around 14 Mb compressed. Once
++uncompressed the train set is 52 MB and the test set is 34 MB.
++
++The data is downloaded, extracted and cached in the '~/scikit_learn_data'
++folder. However contrary to other datasets in the scikit, the data is
++not vectorized into numpy arrays but the dataset list the filenames of
++the posts and there categories as target signal.
++
++The lack of vector feature extraction is intentional: there is no single
++best way to turn text into vectors. Depending on the task various
++preprocessing and text transformation are useful or not (n-grams,
++lowercasing, stemming, stop-words filtering, TF-IDF weighting...).
++
++"""
++# Copyright (c) 2011 Olivier Grisel <olivier.grisel@ensta.org>
++# License: Simplified BSD
++
++import os
++import urllib
++import logging
++import tarfile
++
++import numpy as np
++
++from .base import Bunch
++from .base import get_data_home
++from .base import load_filenames
++
++
++URL = ("http://people.csail.mit.edu/jrennie/"
++            "20Newsgroups/20news-bydate.tar.gz")
++ARCHIVE_NAME = "20news-bydate.tar.gz"
++TRAIN_FOLDER = "20news-bydate-train"
++TEST_FOLDER = "20news-bydate-test"
++
++
++def load_20newsgroups(data_home=None, subset='train', categories=None,
++                      shuffle=True, rng=42):
++    """Load the filenames of the 20 newsgroups dataset
++
++    Parameters
++    ----------
++    subset: optional, default: 'train'
++        Select the dataset to load: 'train' for the training set, 'test'
++        for the test set.
++
++    data_home: optional, default: None
++        Specify another download and cache folder for the datasets. By
++        default all scikit learn data is stored in '~/scikit_learn_data'
++        subfolders.
++
++    categories: None or collection of string or unicode
++        if None (default), load all the categories.
++        if not Non, list of category names to load (other categories
++        ignored)
++
++    shuffle: True by default
++        whether or not to shuffle the data: might be important for models
++        that make the assumption that the samples are independent and
++        identically distributed (i.i.d.) such as stochastic gradient
++        descent for instance.
++
++    rng: a numpy random number generator or a seed integer, 42 by default
++        used to shuffle the dataset
++
++    """
++
++    data_home = get_data_home(data_home=data_home)
++    twenty_home = os.path.join(data_home, "20news_home")
++    archive_path = os.path.join(twenty_home, ARCHIVE_NAME)
++    train_path = os.path.join(twenty_home, TRAIN_FOLDER)
++    test_path = os.path.join(twenty_home, TEST_FOLDER)
++
++    if not os.path.exists(twenty_home):
++        os.makedirs(twenty_home)
++
++    if not os.path.exists(train_path) or not os.path.exists(test_path):
++
++        if not os.path.exists(archive_path):
++            logging.info("Downloading dataset from %s (14 MB)", URL)
++            opener = urllib.urlopen(URL)
++            open(archive_path, 'wb').write(opener.read())
++
++        logging.info("Decompressing %s", archive_path)
++        tarfile.open(archive_path, "r:gz").extractall(path=twenty_home)
++        os.remove(archive_path)
++
++    if subset == 'train':
++        folder_path = train_path
++    elif subset == 'test':
++        folder_path = test_path
++    else:
++        raise ValueError(
++            "subset can only be 'train' or 'test', got '%s'" % subset)
++
++    description = subset + ' subset of the 20 newsgroups by date dataset'
++    return load_filenames(folder_path, description=description,
++                          categories=categories, shuffle=shuffle, rng=rng)
+diff --git a/scikits/learn/metrics/metrics.py b/scikits/learn/metrics/metrics.py
+index 3aabe702411ea..df96199e3f84c 100644
+--- a/scikits/learn/metrics/metrics.py
++++ b/scikits/learn/metrics/metrics.py
+@@ -369,7 +369,7 @@ def precision_recall_fscore_support(y_true, y_pred, beta=1.0, labels=None):
+     return precision, recall, fscore, support
+ 
+ 
+-def classification_report(y_true, y_pred, labels=None, class_names=None):
++def classification_report(y_true, y_pred, labels=None, target_names=None):
+     """Build a text report showing the main classification metrics
+ 
+     Parameters
+@@ -383,7 +383,7 @@ def classification_report(y_true, y_pred, labels=None, class_names=None):
+     labels : array, shape = [n_labels]
+         optional list of label indices to include in the report
+ 
+-    class_names : list of strings
++    target_names : list of strings
+         optional display names matching the labels (same order)
+ 
+     Returns
+@@ -400,11 +400,11 @@ def classification_report(y_true, y_pred, labels=None, class_names=None):
+ 
+     last_line_heading = 'avg / total'
+ 
+-    if class_names is None:
++    if target_names is None:
+         width = len(last_line_heading)
+-        class_names = ['%d' % l for l in labels]
++        target_names = ['%d' % l for l in labels]
+     else:
+-        width = max(len(cn) for cn in class_names)
++        width = max(len(cn) for cn in target_names)
+         width = max(width, len(last_line_heading))
+ 
+ 
+@@ -421,7 +421,7 @@ def classification_report(y_true, y_pred, labels=None, class_names=None):
+     p, r, f1, s = precision_recall_fscore_support(y_true, y_pred,
+                                                   labels=labels)
+     for i, label in enumerate(labels):
+-        values = [class_names[i]]
++        values = [target_names[i]]
+         for v in (p[i], r[i], f1[i]):
+             values += ["%0.2f" % float(v)]
+         values += ["%d" % int(s[i])]
+diff --git a/scikits/learn/metrics/tests/test_metrics.py b/scikits/learn/metrics/tests/test_metrics.py
+index 58b3a7e5dd174..8c60804a38474 100644
+--- a/scikits/learn/metrics/tests/test_metrics.py
++++ b/scikits/learn/metrics/tests/test_metrics.py
+@@ -186,7 +186,7 @@ def test_classification_report():
+ """
+     report = classification_report(
+         y_true, y_pred, labels=range(len(iris.target_names)),
+-        class_names=iris.target_names)
++        target_names=iris.target_names)
+     assert_equal(report, expected_report)
+ 
+     # print classification report with label detection

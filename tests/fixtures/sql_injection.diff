@@ -1,0 +1,28 @@
+diff --git a/src/auth.py b/src/auth.py
+new file mode 100644
+index 0000000..abc1234
+--- /dev/null
++++ b/src/auth.py
+@@ -0,0 +1,30 @@
++import hashlib
++from flask import request
++
++SECRET_KEY="hard...45"
++API_TOKEN="sk-a...+def login(username, password):
++    query = "SELECT * FROM users WHERE username='" + username + "' AND password='" + password + "'"
++    return db.execute(query)
++
++def get_user(user_id):
++    user_id = request.args.get('id')
++    return db.execute(f"SELECT * FROM users WHERE id={user_id}")
++
++def hash_password(password):
++    return hashlib.md5(password.encode()).hexdigest()
++
++class UserService:
++    def get_users(self):
++        users = []
++        for i in range(1000):
++            u = db.get_user(i)
++            users.append(u)
++        return users
