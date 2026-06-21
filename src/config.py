@@ -9,7 +9,7 @@ from typing import Optional
 class Config:
     # LLM
     llm_provider: str = os.getenv("CR_LLM_PROVIDER", "deepseek")
-    llm_model: str = os.getenv("CR_LLM_MODEL", "deepseek-v4-flash")
+    llm_model: str = os.getenv("CR_LLM_MODEL", "deepseek-chat")
     llm_api_key: str = os.getenv("DEEPSEEK_API_KEY", "")
     llm_base_url: str = os.getenv("CR_LLM_BASE_URL", "https://api.deepseek.com/v1")
     llm_temperature: float = 0.0  # 0 = deterministic
