@@ -98,6 +98,15 @@ python -m src.main --diff-file diff.txt --runs 2 --rounds 2
 - `pop(0)` O(n²) performance bug in Redis stream parsing (redis#1040)
 - Missing timeout in streaming response → potential deadlock (httpx#153)
 
+**Benchmark Metrics:**
+| Metric | Value |
+|--------|-------|
+| Precision | **~70%** (6 rounds of iteration, V5→V10) |
+| Recall | **79%** (LLM-annotated ground truth on 20 PRs) |
+| Unique Discovery Rate | **78%** — bugs Agent found that humans also missed |
+| Human comments classified | 90 from 20 PRs — **81% are design/style opinions** |
+| Human-Agent complementarity | Agent catches actual bugs; humans give design feedback |
+
 ## Data-Driven Iteration (5 Rounds)
 
 ```
