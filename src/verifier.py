@@ -41,11 +41,17 @@ VERIFIER_PROMPT = """你是一个代码审查二审专家。初审agent找到了
 13. **函数签名增加可选参数**：新参数有默认值(=None)，完全向后兼容，不是破坏性变更 — NO
 14. **函数名与实现不一致/互换**：这类声称需要两个函数的完整diff对比证据。如果diff只是代码移动/内联重构，不是bug — NO
 
-**⚠️ 自动NO规则不适用于资源耗尽/DoS/安全越界类问题**：这些属于安全漏洞，即使描述中使用"可能""潜在"等推测性语言，也需上下文判断。
+**⚠️ 自动NO规则不适用于安全/并发/资源耗尽/TOCTOU类问题**：这些属于运行时错误或安全漏洞，即使描述中使用"可能""潜在"等推测性语言，也需上下文判断。
 **⚠️ 安全类issue标题或描述含UNCERTAIN前缀的不适用自动NO**：这是安全reviewer主动标记的"不确定但值得检查"，需逐条判断。
 
-**重要：标题优先原则** — 如果issue的标题/核心主张命中上述任一类别，**即使描述很详细、看起来很有技术含量，也必须NO**。不要被描述中的技术细节误导。
-**例外：安全/CRITICAL级issue（severity=critical且category=security）不适用标题优先原则，必须完整阅读描述后再判断。**
+**标题优先原则（仅适用于非安全/非架构/非性能类issue）**：如果issue的标题/核心主张命中自动NO类别，且issue不是category=security或category=architecture或category=performance，则即使描述很详细还必须NO。
+**安全（category=security）、架构（category=architecture）、性能（category=performance）类issue，必须完整阅读描述后再判断，不适用标题优先原则。**
+**注意：性能reviewer发现的并发竞态/数据竞争/无锁写入问题，属于运行时错误，以具体代码行证据为准判断。**
+
+**并发竞态/TOCTOU/内存泄漏类issue的判断标准**：
+- 多个线程写入共享list/dict而没有锁 → YES
+- 函数内创建的缓存/dict在多次调用间持续增长无上限 → YES
+- 检查文件存在后到使用之间有时间窗口 → YES（TOCTOU）
 
 **需上下文判断**：
 6. **证据不成立**：如果issue声称"缺少X"但diff中明显有X — NO
@@ -81,30 +87,53 @@ VERIFIER_PROMPT = """你是一个代码审查二审专家。初审agent找到了
 def verify_issues(issues: List[Dict], diff_text: str, max_issues: int = 15) -> List[Dict]:
     """
     用LLM二次确认issue是否为真bug。
-    
-    Args:
-        issues: [{"title": ..., "description": ..., "severity": ..., "file": ..., "line_start": ...}, ...]
-        diff_text: 原始diff
-        max_issues: 最多验证多少条（避免prompt过长）
-        
-    Returns:
-        通过验证的issue列表
+    前置硬规则：并发竞态/TOCTOU/资源耗尽直接放行，不经过LLM。
     """
     if not issues:
         return []
-    
-    # 验证所有severity（之前只验证HIGH/CRITICAL导致MEDIUM DRY问题漏过）
-    to_verify = issues[:]  # 全部验证
-    rest = []
-    
-    if not to_verify:
-        return issues
-    
-    to_verify = to_verify[:max_issues]
+
+    # 前置硬规则：已知为真的模式直接放行，不给LLM误杀机会
+    auto_yes_patterns = [
+        "无锁写入", "并发竞态", "数据竞争", "race condition", "竞态条件",
+        "TOCTOU", "竞态窗口", "时间窗口",
+        "无上限缓存", "无限增长", "OOM风险", "内存耗尽",
+        "日志中记录.*邮箱", "敏感信息泄露.*日志", "泄露.*PII",
+        "无限制.*线程", "无线程池",
+        "无连接池复用", "每次.*创建.*连接", "连接池",
+        "无超时.*轮询", "无超时.*循环", "无限轮询", "忙等待.*无超时", "while.*True.*无超时",
+        "忙等待轮询", "轮询.*任务完成.*无超时",
+        "硬编码.*密钥", "硬编码.*密码", "私钥",
+    ]
+    auto_yes = []
+    needs_llm = []
+    for iss in issues:
+        title = iss.get("title", "")
+        is_auto = any(re.search(p, title) for p in auto_yes_patterns)
+        if is_auto:
+            logger.info(f"  Auto-pass (hard rule): {title[:60]}")
+            auto_yes.append(iss)
+        else:
+            needs_llm.append(iss)
+
+    # LLM验证剩下的
+    if needs_llm:
+        llm_passed = _verify_with_llm(needs_llm, diff_text, max_issues)
+    else:
+        llm_passed = []
+
+    passed = auto_yes + llm_passed
+    logger.info(f"Verification: {len(issues)} total → {len(passed)} passed "
+                f"({len(auto_yes)} auto-yes, {len(llm_passed)} llm-passed, "
+                f"{len(needs_llm) - len(llm_passed)} llm-filtered)")
+    return passed
+
+
+def _verify_with_llm(issues: List[Dict], diff_text: str, max_issues: int = 15) -> List[Dict]:
+    """纯LLM验证流程（分离出来以便硬规则前置）"""
     
     # 构建验证prompt
     items = []
-    for idx, iss in enumerate(to_verify):
+    for idx, iss in enumerate(issues):
         items.append(
             f"### Issue #{idx}\n"
             f"**Severity**: {iss.get('severity', '?')}\n"
@@ -130,22 +159,22 @@ def verify_issues(issues: List[Dict], diff_text: str, max_issues: int = 15) -> L
     
     try:
         raw = _call_llm(messages)
-        verdicts = _parse_verdicts(raw, len(to_verify))
+        verdicts = _parse_verdicts(raw, len(issues))
     except Exception as e:
         logger.warning(f"Verification failed: {e}, keeping all issues")
         return issues
     
     # 过滤FP
     passed = []
-    for idx, iss in enumerate(to_verify):
+    for idx, iss in enumerate(issues):
         verdict = verdicts.get(idx, "YES")  # 默认保留
         if verdict == "YES":
             passed.append(iss)
         else:
             logger.info(f"  Filtered FP: {iss.get('title', '?')[:60]}")
     
-    logger.info(f"Verification: {len(to_verify)} checked → {len(passed)} passed, {len(to_verify)-len(passed)} filtered")
-    return passed + rest
+    logger.info(f"Verification: {len(issues)} checked → {len(passed)} passed, {len(issues)-len(passed)} filtered")
+    return passed
 
 
 def _call_llm(messages: list) -> str:

@@ -17,13 +17,15 @@ def parse_diff(diff_text: str) -> list[dict[str, Any]]:
         return []
 
     results: list[dict[str, Any]] = []
-    file_blocks = re.split(r"(?=^diff --git )", diff_text.strip(), flags=re.MULTILINE)
+    # 支持两种diff格式: git diff (diff --git) 和 标准 unified diff (--- /dev/null)
+    file_blocks = re.split(r"(?=^diff --git |^--- )", diff_text.strip(), flags=re.MULTILINE)
 
     for block in file_blocks:
         if not block.strip():
             continue
 
-        file_match = re.search(r"^\+\+\+ b/(.+)", block, re.MULTILINE)
+        # 支持两种格式: +++ b/path (git diff) 和 +++ path (标准 unified diff)
+        file_match = re.search(r"^\+\+\+ (?:b/)?(.+)", block, re.MULTILINE)
         if not file_match:
             continue
         filepath = file_match.group(1)
