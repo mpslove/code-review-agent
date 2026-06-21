@@ -1,7 +1,7 @@
 """
 AST模式匹配检测器集 — 每个检测器是一个独立class，继承BaseDetector
 
-检测清单（面试能讲的编译技术）：
+检测清单：
 1. MutableDefaultArgs     — 可变默认参数 `def foo(x=[])`
 2. BareExcept             — 裸except `except:`
 3. DangerousFunctions     — eval/exec/pickle/subprocess(shell=True)
