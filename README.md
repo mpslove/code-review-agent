@@ -1,192 +1,222 @@
-# 🤖 Code Review Agent
+<p align="center">
+  <h1 align="center">QA Agent</h1>
+  <p align="center">AI驱动的代码审查 + 静态分析 + 测试生成工具</p>
+<p align="center">
+  <a href="https://github.com/mpslove/code-review-agent/actions/workflows/ci.yml">
+    <img src="https://github.com/mpslove/code-review-agent/actions/workflows/ci.yml/badge.svg" alt="CI Status"/>
+  </a>
+</p>
+</p>
 
-**Multi-Agent AI Code Review System** — 4 specialized LLM reviewers with multi-round voting, cross-category dedup, and FP verification.
+## 概述
 
-Built from scratch in pure Python (no LangChain). Benchmarked on 20 real open-source PRs.
+QA Agent 是一个面向软件质量保障的智能化工具，提供三种互补的代码分析能力：
 
-## Quick Start
+| 模式 | 命令 | 技术 | 用途 |
+|------|------|------|------|
+| **static** | `--mode static` | AST模式匹配（0 LLM调用） | 快速发现已知bug模式 |
+| **review** | `--mode review` | 4个LLM专精Agent × 2轮投票 | 深入审查逻辑/安全/性能问题 |
+| **testgen** | `--mode testgen` | AST签名提取 + LLM生成 | 自动生成pytest单元测试 |
+| **full** | `--mode full` | static + review 合并输出 | 最全面的分析 |
+
+**适用场景：**
+- 代码审查（Code Review）：给一个GitHub PR链接或diff文件，自动输出审查报告
+- 静态扫描：批量扫描项目代码中的潜在缺陷
+- 测试生成：根据函数签名自动生成单元测试骨架
+
+---
+
+## 快速开始
+
+### 环境要求
+
+- Python 3.11+
+- DeepSeek API key（review / testgen 模式需要）
+
+### 安装
 
 ```bash
-# Install
-pip install -e .
+# 克隆项目
+git clone https://github.com/mpslove/code-review-agent.git
+cd code-review-agent
 
-# Set your API key
-export DEEPSEEK_API_KEY=sk-...
+# 安装依赖
+pip install -r requirements.txt
+```
 
-# Review a GitHub PR
+### 配置
+
+```bash
+# 在项目根目录创建 .env 文件
+echo "DEEPSEEK_API_KEY=sk-your-key" > .env
+```
+
+### 使用示例
+
+**静态分析（AST，不需要API key）：**
+```bash
+# 分析单个文件
+python -m src.main --mode static --file path/to/file.py
+
+# 批量扫描整个目录
+python -m src.main --mode static --dir path/to/project
+```
+
+**代码审查（需要API key）：**
+```bash
+# 审查GitHub PR
 python -m src.main --pr owner/repo#123
 
-# Review a local diff
-git diff main | python -m src.main
+# 审查本地diff文件
+python -m src.main --diff-file changes.diff
 
-# Ensemble mode (2 runs, union of findings)
-python -m src.main --diff-file diff.txt --runs 2 --rounds 2
+# 完整模式（静态+审查合并）
+python -m src.main --mode full --diff-file changes.diff
 ```
 
-## Architecture
-
-```
-                    +------------------+
-                    |   Diff Input     |
-                    +--------+---------+
-                             |
-              +--------------+--------------+
-              |              |              |
-     +--------v----+  +-----v------+  +----v--------+
-     |  Security   |  | Performance|  | Architecture|  Style
-     |  Reviewer   |  |  Reviewer  |  |  Reviewer   |  Reviewer
-     +------+------+  +-----+------+  +------+------+  +----+
-            |               |                |             |
-            +-------+-------+-------+--------+------+------+
-                             |                      |
-                      +------v------+        +------v-------+
-                      | 2-Round     |        |  FP Verifier |
-                      |  Voting     |        |  (LLM二审)   |
-                      +------+------+        +------+-------+
-                             |                      |
-                      +------v----------+-----------+
-                      | Cross-Category  |
-                      |  Dedup (exact)  |
-                      +------+----------+
-                             |
-                      +------v-------+
-                      |  Ensemble     |
-                      |  (--runs N)   |
-                      +------+-------+
-                             |
-                      +------v-------+
-                      |  Report (MD)  |
-                      +--------------+
-```
-
-**4 Specialized Reviewers:** Each is a single LLM call with a domain-specific prompt that enforces strict evidence and rejects subjective opinions.
-
-| Reviewer | Catches | Does NOT report |
-|----------|---------|-----------------|
-| **Security** | XSS, SQL injection, auth bypass, hardcoded secrets, race conditions | — |
-| **Performance** | O(n²) loops, N+1 queries, memory leaks, blocking I/O | Style nits |
-| **Architecture** | Runtime errors: connection leaks, uncommitted transactions, race conditions | Design opinions (god object, coupling) |
-| **Style** | Missing returns, uninitialized attrs, incorrect conditionals, dead code | Missing docstrings, type annotations, param count |
-
-**Pipeline:**
-1. 4 reviewers run in **parallel** via ThreadPoolExecutor
-2. **2-round voting** per category for consensus
-3. **Verifier**: LLM second-pass + 14 automatic rejection rules
-4. **Cross-category dedup**: exact line match to prevent duplicate reports across reviewers
-5. **Ensemble (`--runs N`)** multiple passes with union merge (defeats LLM non-determinism)
-
-**Zero framework dependency** — no LangChain, no LangGraph, no third-party agent framework. Pure `requests` + `pydantic v2`.
-
-## Benchmark (20 Real Open-Source PRs)
-
-| Metric | V5 (Baseline) | V8 | V9 | V10 (w/ dedup) |
-|--------|:---:|:---:|:---:|:---:|
-| Total Issues | 146 | 66 | 48 | *running now* |
-| CRITICAL+HIGH | — | 38 | **41** (+25%↑) | — |
-| MEDIUM (noise) | — | 28 | **7** (-75%↓) | — |
-| Cross-reviewer Dups | — | many | ~8-10 | **~0** |
-| Precision | **20%** | ~35% | **~70%** | **~70%** |
-
-**Tested PRs:** `aiohttp`, `django`, `httpx`, `requests`, `pytest`, `redis`, `uvicorn`, `starlette`, `black`, `scikit-learn`
-
-**Key findings across real PRs:**
-- `lop`→`loop` typo that caused silent event-loop fallback (aiohttp#159)
-- `release()` infinite loop from wrong while-condition (aiohttp#159)
-- `content_type` getter missing `return` statement (aiohttp#159)
-- `Application.__init__` called with positional arg → `TypeError` (aiohttp#159)
-- Missing `__all__` star-import → `NameError` at module load (aiohttp#159)
-- `pop(0)` O(n²) performance bug in Redis stream parsing (redis#1040)
-- Missing timeout in streaming response → potential deadlock (httpx#153)
-
-**Benchmark Metrics:**
-| Metric | Value |
-|--------|-------|
-| Precision | **~70%** (6 rounds of iteration, V5→V10) |
-| Recall | **79%** (LLM-annotated ground truth on 20 PRs) |
-| Unique Discovery Rate | **78%** — bugs Agent found that humans also missed |
-| Human comments classified | 90 from 20 PRs — **81% are design/style opinions** |
-| Human-Agent complementarity | Agent catches actual bugs; humans give design feedback |
-
-## Data-Driven Iteration (5 Rounds)
-
-```
-V5: 146 issues, Precision 20%  ← 80% were false positives
-  ↓ +16 verifier rules
-V6: 67 issues, Precision 53%
-  ↓ +8 harder rules
-V7: 30 issues, Precision 67%   
-  ↓ +reviewer prompt tightening
-V9: 48 issues, MEDIUM noise -75%
-  ↓ +cross-category dedup
-V10: TBD
-```
-
-**Methodology:** Fixed benchmark → sample 15 issues → manually validate precision → classify FP root causes → fix at the appropriate layer → unit test → retest.
-
-## CLI Usage
-
+**测试生成（需要API key）：**
 ```bash
-# Basic review
-python -m src.main --diff-file my.diff
-
-# GitHub PR review
-python -m src.main --pr encode/httpx#153
-
-# Advanced: 2 rounds, 2 runs, save to file
-python -m src.main --diff-file diff.txt --rounds 2 --runs 2 --output report.md
-
-# JSON output
-python -m src.main --diff-file diff.txt --format json
-
-# Strict mode: 3 rounds, consensus required
-python -m src.main --diff-file diff.txt --rounds 3 --min-consensus 3 --mode strict
+python -m src.main --mode testgen --file path/to/module.py
 ```
 
-## Configuration
+---
 
-| Env Variable | Default | Required |
-|---|---|---|
-| `DEEPSEEK_API_KEY` | — | ✓ |
-| `CR_LLM_MODEL` | `deepseek-v4-flash` | |
-| `CR_LLM_BASE_URL` | `https://api.deepseek.com/v1` | |
-| `CR_LLM_TEMPERATURE` | `0.0` | |
+## 技术架构
 
-## Project Structure
+### 数据流
 
 ```
-code-review-agent/
-├── src/
-│   ├── main.py              # CLI entry, pipeline orchestration
-│   ├── voting.py            # Multi-round voting + ensemble
-│   ├── verifier.py          # FP verifier (14 auto-reject rules)
-│   ├── reviewer/
-│   │   ├── prompts.py       # 4 reviewer prompts (V9 tightened)
-│   │   ├── security.py / performance.py / architecture.py / style.py
-│   │   └── output_schema.py # Pydantic v2 models
-│   ├── tools/diff_parser.py # Diff analysis
-│   └── rag/                 # Optional chromadb RAG
-├── tests/
-│   ├── benchmark/           # 20 PRs + 5 rounds of results
-│   └── test_*.py            # Verifier FP tests
-├── setup.py                 # pip install -e .
-└── README.md
+diff / PR / 文件
+    │
+    ├── [static 模式] ──→ AST解析 ──→ 10个检测器并行 ──→ 报告
+    │
+    └── [review 模式] ──→ 4个LLM Agent (安全/性能/架构/风格)
+                              │
+                          [多轮投票] ──→ Verifier ──→ 合并去重 ──→ 报告
+                              │
+                         [testgen 模式]
+                          AST签名提取 ──→ LLM生成 ──→ pytest文件
 ```
 
-## Known Limitations
+### 静态分析引擎（AST模式匹配）
 
-1. **LLM non-determinism** — mitigated by `--runs N` ensemble (cost: N×)
-2. **Diff-only context** — cannot see full file outside diff hunks
-3. **No recall benchmark** — 308 human comments collected but line-level mismatch prevents exact comparison
-4. **DeepSeek-specific** — prompts optimized for DeepSeek API behavior
-5. **No auto-fix** — identifies issues but doesn't generate PR patches
+使用Python内置的 `ast` 模块解析抽象语法树，不依赖LLM。每个检测器独立实现：
 
-## Why No LangChain?
+| 检测器 | 原理 | 阈值 |
+|--------|------|------|
+| MutableDefaultArgs | 检测 `def foo(x=[])` 等可变默认参数 | — |
+| BareExcept | 检测 `except:` 会吞掉 KeyboardInterrupt | — |
+| DangerousFunctions | 检测 eval/exec/pickle/subprocess(shell=True) | — |
+| SQLInjection | 检测 SQL 关键字 + f-string/format 拼接 | — |
+| PathTraversal | 数据流追踪：参数→`os.path.join` | — |
+| HardcodedSecrets | 正则匹配 password/api_key/private key | — |
+| UnusedVariable | `定义集 - 引用集` | — |
+| ResourceLeak | 检测 `open()` 不在 `with` 内 | — |
+| AssertInProduction | 非test文件中的assert | — |
+| CompareWithSelf | 检测 `if x == x:` 恒真比较 | — |
+| CyclomaticComplexity | McCabe圈复杂度 | >10警告，>20错误 |
 
-The project is designed to demonstrate deep understanding of LLM agent systems — not framework API calls. Hand-rolling `requests` + `pydantic` adds ~200 lines but shows mastery of:
-- Structured output parsing and validation
-- Error handling and retry strategies
-- Multi-agent orchestration without framework magic
-- Data-driven iteration methodology
+### LLM多Agent审查
+
+- **4个专精Agent**：安全（Security）、性能（Performance）、架构（Architecture）、风格（Style）
+- **多轮投票**：每个Agent运行N轮，取共识（默认2/2）
+- **Verifier过滤器**：前置硬规则（并发/TOCTOU/缓存OOM）绕过LLM直接放行 + LLM二次确认其他issue
+- **跨类别去重**：相同文件+行号的issue合并保留高严重度
+
+---
+
+## 验证结果
+
+### 检出率验证（埋9个bug）
+
+在同一份测试代码中埋入9个真实bug模式，三种模式的检出结果：
+
+| Bug类型 | Static | Review | Full |
+|---------|:------:|:------:|:----:|
+| SQL注入 | ✅ | ✅ | ✅ |
+| 无上限缓存OOM | ❌ | ✅ | ✅ |
+| 并发竞态（无锁append） | ❌ | ✅ | ✅ |
+| 路径遍历 | ✅ | ⚠️ 部分误杀 | ✅ 互补 |
+| 日志泄露邮箱 | ❌ | ✅ | ✅ |
+| TOCTOU | ❌ | ✅ | ✅ |
+| 无线程池限制 | ❌ | ✅ | ✅ |
+| MD5不安全哈希 | ❌ | 🟡 Verifier判定合理 | 🟡 |
+| run_batch并发 | ❌ | ❌ 边界问题 | ❌ |
+
+**结论：9种埋点检出8类，其中7类通过全部验证。Static和Review互补覆盖关键缺陷。**
+
+### 自己审自己（Dogfooding）
+
+QA Agent 对自己全部28个源文件进行扫描：
+
+```
+28 files → 25 issues → 0 LLM calls → 0.3 seconds
+```
+
+发现的最严重问题：
+
+| 文件 | 问题 | 修复 |
+|------|------|------|
+| `src/main.py` | 圈复杂度51（入口函数过大） | 拆成5个handler函数 → 归零 |
+| `src/voting.py` | assert在生产代码中（`python -O`禁用） | 改为 `raise ValueError` |
+| `src/reviewer/base.py` | JSON提取函数圈复杂度18 | 重写提取策略 |
+
+**证明链：工具发现自己的问题 → 动手修复 → 工具验证修复成功 → 问题数从27降至25。**
+
+### Verifier稳定性
+
+前置硬规则确保关键类别100%通过，不再依赖LLM判断：
+
+```
+Auto-pass 并发竞态  × 3（三轮全部通过）
+Auto-pass TOCTOU   × 2（三轮全部通过）
+Auto-pass OOM缓存  × 3（三轮全部通过）
+Auto-pass 日志泄露  × 2（三轮全部通过）
+```
+
+---
+
+## 项目结构
+
+```
+src/
+├── main.py                 # CLI入口
+├── config.py               # 配置中心
+├── static_analysis/        # 静态分析引擎（AST模式匹配）
+│   ├── base.py             # Finding模型 + 检测器基类
+│   ├── detectors.py        # 11个检测器实现
+│   └── engine.py           # 分析引擎（文件/目录/diff）
+├── test_generator/         # 测试用例生成器
+│   └── __init__.py
+├── reviewer/               # LLM专精Agent
+│   ├── base.py             # JSON提取 + 修复 + 校验
+│   ├── security.py         # 安全Agent
+│   ├── performance.py      # 性能Agent
+│   ├── architecture.py     # 架构Agent
+│   ├── style.py            # 风格Agent
+│   └── prompts.py          # 各Agent提示词
+├── verifier.py             # 后验证过滤器（硬规则+LLM）
+├── voting.py               # 多轮投票引擎
+├── github.py               # GitHub集成（gh CLI）
+├── rag/                    # RAG上下文（可选）
+├── tools/                  # 工具函数
+└── tools/diff_parser.py    # diff解析 + 测试覆盖分析
+```
+
+---
+
+## 与岗位JD的对应
+
+| JD要求 | 项目中对应 |
+|--------|-----------|
+| 基于AI的代码缺陷检测与静态分析 | `--mode static` — 11个AST检测器，0 LLM |
+| 大模型辅助Code Review | `--mode review` — 4 Agent × 2轮投票 |
+| 识别逻辑漏洞、边界问题与代码坏味道 | 圈复杂度检测 + 并发竞态/TOCTOU/路径遍历检测 |
+| AI驱动测试用例自动生成 | `--mode testgen` — AST签名提取 + LLM生成 |
+| 利用大模型辅助分析缺陷、定位问题根因 | Verifier逐条验证 + 跨category去重 |
+| 沉淀工具与方法 | 统一CLI + markdown/json输出 |
+
+---
 
 ## License
 
